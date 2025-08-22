@@ -4,7 +4,7 @@ import 'package:flutter_triple/flutter_triple.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:logging/logging.dart';
-import 'package:material_symbols_icons/symbols.dart';
+import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:squawker/client/app_http_client.dart';
 import 'package:squawker/client/client_guest_account.dart';
@@ -187,9 +187,9 @@ class TwitterAccount {
           await _setLastGuestTwitterTokenCreationAttempted();
           await TwitterGuestAccount.createGuestTwitterToken();
         }
-        on TwitterAccountException catch (_, ex) {
-          log.warning('*** Try to create a guest Twitter/X token after 24 hours with error: ${_.toString()}');
-          lastGuestAccountExc = _;
+        on TwitterAccountException catch (ex) {
+          log.warning('*** Try to create a guest Twitter/X token after 24 hours with error: ${ex.toString()}');
+          lastGuestAccountExc = ex;
         }
       }
     }
@@ -320,7 +320,7 @@ class TwitterAccount {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          icon: const Icon(Symbols.warning),
+          icon: const Icon(Icons.warning),
           title: Text(L10n.current.warning_regular_account_unauthenticated_access_title),
           titleTextStyle: TextStyle(fontSize: Theme.of(context).textTheme.titleMedium!.fontSize, color: Theme.of(context).textTheme.titleMedium!.color, fontWeight: FontWeight.bold),
           content: Wrap(

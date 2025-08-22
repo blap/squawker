@@ -7,19 +7,25 @@ import 'package:squawker/constants.dart';
 import 'package:pref/pref.dart';
 
 class TrendLocationsModel extends Store<List<TrendLocation>> {
-  TrendLocationsModel() : super([]);
+  late final Twitter _twitter;
+
+  TrendLocationsModel() : super([]) {
+    _twitter = Twitter();
+  }
 
   Future<void> loadLocations() async {
     await execute(() async {
-      return (await Twitter.getTrendLocations())..sort((a, b) => a.name!.compareTo(b.name!));
+      return (await _twitter.getTrendLocations())..sort((a, b) => a.name!.compareTo(b.name!));
     });
   }
 }
 
 class TrendsModel extends Store<List<Trends>> {
+  late final Twitter _twitter;
   final UserTrendLocationModel userTrendLocationModel;
 
   TrendsModel(this.userTrendLocationModel) : super([]) {
+    _twitter = Twitter();
     // Ensure we reload trends when the saved location changes
     userTrendLocationModel.observer(onState: (_) async {
       await loadTrends();
@@ -28,7 +34,7 @@ class TrendsModel extends Store<List<Trends>> {
 
   Future<void> loadTrends() async {
     await execute(() async {
-      return await Twitter.getTrends(userTrendLocationModel.state.active.woeid!);
+      return await _twitter.getTrends(userTrendLocationModel.state.active.woeid!);
     });
   }
 }

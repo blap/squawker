@@ -4,7 +4,7 @@ import 'dart:io';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:material_symbols_icons/symbols.dart';
+import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:squawker/generated/l10n.dart';
 import 'package:squawker/utils/misc.dart';
@@ -78,7 +78,7 @@ class SettingsAboutFragment extends StatelessWidget {
         child: ListView(children: [
           InkWell(
             child: PrefLabel(
-              leading: const Icon(Symbols.info),
+              leading: const Icon(Icons.info),
               title: Text(L10n.of(context).version),
               subtitle: Text(appVersion),
             ),
@@ -93,13 +93,13 @@ class SettingsAboutFragment extends StatelessWidget {
             onTap: () => _appInfo(context),
           ),
           PrefLabel(
-            leading: const Icon(Symbols.favorite),
+            leading: const Icon(Icons.favorite),
             title: Text(L10n.of(context).contribute),
             subtitle: Text(L10n.of(context).help_make_fritter_even_better),
             onTap: () => openUri('https://github.com/j-fbriere/squawker'),
           ),
           PrefLabel(
-            leading: const Icon(Symbols.bug_report),
+            leading: const Icon(Icons.bug_report),
             title: Text(L10n.of(context).report_a_bug),
             subtitle: Text(
               L10n.of(context).let_the_developers_know_if_something_is_broken,
@@ -107,7 +107,7 @@ class SettingsAboutFragment extends StatelessWidget {
             onTap: () => openUri('https://github.com/j-fbriere/squawker/issues'),
           ),
           PrefLabel(
-            leading: const Icon(Symbols.copyright),
+            leading: const Icon(Icons.copyright),
             title: Text(L10n.of(context).licenses),
             subtitle: Text(L10n.of(context).all_the_great_software_used_by_fritter),
             onTap: () => showLicensePage(

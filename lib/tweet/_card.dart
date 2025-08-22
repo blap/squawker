@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'package:dart_twitter_api/twitter_api.dart';
 import 'package:extended_image/extended_image.dart';
 import 'package:flutter/material.dart';
-import 'package:material_symbols_icons/symbols.dart';
+import 'package:flutter/material.dart';
 
 import 'package:squawker/client/client.dart';
 import 'package:squawker/constants.dart';
@@ -21,8 +21,11 @@ class TweetCard extends StatelessWidget {
 
   final TweetWithCard tweet;
   final Map<String, dynamic>? card;
+  final Twitter _twitter;
 
-  const TweetCard({Key? key, required this.tweet, required this.card}) : super(key: key);
+  TweetCard({Key? key, required this.tweet, required this.card, Twitter? twitter}) : 
+    _twitter = twitter ?? Twitter(),
+    super(key: key);
 
   _createBaseCard(Widget child) {
     return Container(
@@ -99,7 +102,7 @@ class TweetCard extends StatelessWidget {
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  const Icon(Symbols.link_rounded, size: 12, color: Colors.white),
+                  const Icon(Icons.link_rounded, size: 12, color: Colors.white),
                   const SizedBox(width: 4),
                   Text(uri,
                       style: Theme.of(context).textTheme.bodySmall!.copyWith(
@@ -397,7 +400,7 @@ class TweetCard extends StatelessWidget {
             username: 'username',
             loop: false,
             metadata: TweetVideoMetadata(null, aspectRatio, image, () async {
-              var broadcast = await Twitter.getBroadcastDetails(key);
+              var broadcast = await _twitter.getBroadcastDetails(key);
 
               return TweetVideoUrls(broadcast['source']['noRedirectPlaybackUrl'], null);
             }));

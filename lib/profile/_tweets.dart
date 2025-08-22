@@ -27,6 +27,7 @@ class ProfileTweets extends StatefulWidget {
 }
 
 class _ProfileTweetsState extends State<ProfileTweets> with AutomaticKeepAliveClientMixin<ProfileTweets> {
+  late final Twitter _twitter;
   late PagingController<String?, TweetChain> _pagingController;
 
   static const int pageSize = 20;
@@ -38,6 +39,7 @@ class _ProfileTweetsState extends State<ProfileTweets> with AutomaticKeepAliveCl
   void initState() {
     super.initState();
 
+    _twitter = Twitter();
     _pagingController = PagingController(firstPageKey: null);
     _pagingController.addPageRequestListener((cursor) {
       _loadTweets(cursor);
@@ -55,16 +57,16 @@ class _ProfileTweetsState extends State<ProfileTweets> with AutomaticKeepAliveCl
       TweetStatus result;
       if (TwitterAccount.hasAccountAvailable()) {
         if (PrefService.of(context).get(optionEnhancedProfile)) {
-          result = await Twitter.getUserWithProfileGraphql(widget.user.idStr!, widget.type, widget.pinnedTweets,
+          result = await _twitter.getUserWithProfileGraphql(widget.user.idStr!, widget.type, widget.pinnedTweets,
               cursor: cursor, count: pageSize, includeReplies: widget.includeReplies);
         }
         else {
-          result = await Twitter.getTweets(widget.user.idStr!, widget.type, widget.pinnedTweets,
+          result = await _twitter.getTweets(widget.user.idStr!, widget.type, widget.pinnedTweets,
               cursor: cursor, count: pageSize, includeReplies: widget.includeReplies);
         }
       }
       else {
-        result = await Twitter.getUserTweets(widget.user.idStr!, widget.type, widget.pinnedTweets,
+        result = await _twitter.getUserTweets(widget.user.idStr!, widget.type, widget.pinnedTweets,
             count: pageSize, includeReplies: widget.includeReplies);
       }
 

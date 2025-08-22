@@ -13,10 +13,14 @@ import 'package:pref/pref.dart';
 class SubscriptionsModel extends Store<List<Subscription>> {
   static final log = Logger('SubscriptionsModel');
 
+  late final Twitter _twitter;
+
   final BasePrefService prefs;
   final GroupsModel groupModel;
 
-  SubscriptionsModel(this.prefs, this.groupModel) : super([]);
+  SubscriptionsModel(this.prefs, this.groupModel) : super([]) {
+    _twitter = Twitter();
+  }
 
   Future<void> reloadSubscriptions() async {
     log.info('Reloading subscriptions');
@@ -79,7 +83,7 @@ class SubscriptionsModel extends Store<List<Subscription>> {
 
       var ids = (await database.query(tableSubscription, columns: ['id'])).map((e) => e['id'] as String).toList();
 
-      var users = await Twitter.getUsers(ids);
+      var users = await _twitter.getUsers(ids);
 
       var batch = database.batch();
       for (var user in users) {

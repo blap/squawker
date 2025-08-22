@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_triple/flutter_triple.dart';
-import 'package:material_symbols_icons/symbols.dart';
+import 'package:flutter/material.dart';
 import 'package:squawker/database/entities.dart';
 import 'package:squawker/generated/l10n.dart';
 import 'package:squawker/group/group_model.dart';
@@ -24,7 +24,7 @@ void showFeedSettings(BuildContext context, GroupModel model) {
               children: [
                 AppBar(
                   leading: IconButton(
-                      icon: const Icon(Symbols.arrow_back_rounded),
+                      icon: const Icon(Icons.arrow_back_rounded),
                       onPressed: () {
                         Navigator.of(context).pop();
                       }),

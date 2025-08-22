@@ -13,7 +13,7 @@ import 'package:squawker/import_data_model.dart';
 import 'package:squawker/subscriptions/users_model.dart';
 import 'package:squawker/utils/data_service.dart';
 import 'package:logging/logging.dart';
-import 'package:material_symbols_icons/symbols.dart';
+import 'package:flutter/material.dart';
 import 'package:pref/pref.dart';
 import 'package:provider/provider.dart';
 import 'package:squawker/utils/iterables.dart';
@@ -190,7 +190,7 @@ class SettingsDataFragment extends StatelessWidget {
         padding: const EdgeInsets.symmetric(vertical: 8),
         child: ListView(children: [
           PrefLabel(
-            leading: const Icon(Symbols.file_download_rounded),
+            leading: const Icon(Icons.file_download_rounded),
             title: Text(L10n.of(context).import),
             subtitle: Text(L10n.of(context).import_data_from_another_device),
             onTap: () async {
@@ -201,7 +201,7 @@ class SettingsDataFragment extends StatelessWidget {
             },
           ),
           PrefLabel(
-            leading: const Icon(Symbols.save),
+            leading: const Icon(Icons.save),
             title: Text(L10n.of(context).export),
             subtitle: Text(L10n.of(context).export_your_data),
             onTap: () => Navigator.pushNamed(context, routeSettingsExport),
@@ -211,4 +211,3 @@ class SettingsDataFragment extends StatelessWidget {
     );
   }
 }
-

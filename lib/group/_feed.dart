@@ -46,6 +46,7 @@ class SubscriptionGroupFeed extends StatefulWidget {
 }
 
 class SubscriptionGroupFeedState extends State<SubscriptionGroupFeed> with WidgetsBindingObserver {
+  late final Twitter _twitter;
 
   static final log = Logger('SubscriptionGroupFeedState');
 
@@ -70,6 +71,7 @@ class SubscriptionGroupFeedState extends State<SubscriptionGroupFeed> with Widge
   void initState() {
     super.initState();
 
+    _twitter = Twitter();
     WidgetsBinding.instance.addObserver(this);
     _visiblePositionState = VisiblePositionState();
     _itemPositionsListener = ItemPositionsListener.create();
@@ -183,7 +185,7 @@ class SubscriptionGroupFeedState extends State<SubscriptionGroupFeed> with Widge
       var storedChunksTweets = storedChunks
         .map((e) => jsonDecode(e['response'] as String))
         .map((e) => List.from(e))
-        .expand((e) => e.map((c) => TweetChain.fromJson(c)))
+        .expand((e) => e.map((c) => TweetChain.fromJson(c as Map<String, dynamic>)))
         .toList();
 
       // avoid duplicates
@@ -216,13 +218,13 @@ class SubscriptionGroupFeedState extends State<SubscriptionGroupFeed> with Widge
       TweetStatus result;
       try {
         if (prefs.get(optionEnhancedFeeds)) {
-          result = await Twitter.searchTweetsGraphql(searchQuery, widget.includeReplies, limit: 100,
+          result = await _twitter.searchTweetsGraphql(searchQuery, widget.includeReplies, limit: 100,
             cursor: searchCursor,
             leanerFeeds: prefs.get(optionLeanerFeeds),
             fetchContext: fetchContext);
         }
         else {
-          result = await Twitter.searchTweets(searchQuery, widget.includeReplies, limit: 100,
+          result = await _twitter.searchTweets(searchQuery, widget.includeReplies, limit: 100,
             cursor: searchCursor,
             cursorType: cursorType,
             leanerFeeds: prefs.get(optionLeanerFeeds),

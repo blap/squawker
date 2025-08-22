@@ -46,6 +46,7 @@ class _StatusScreen extends StatefulWidget {
 }
 
 class _StatusScreenState extends State<_StatusScreen> {
+  late final Twitter _twitter;
   final _pagingController = PagingController<String?, TweetChain>(firstPageKey: null);
   final _scrollController = AutoScrollController();
 
@@ -55,6 +56,7 @@ class _StatusScreenState extends State<_StatusScreen> {
   void initState() {
     super.initState();
 
+    _twitter = Twitter();
     _pagingController.addPageRequestListener((cursor) {
       _loadTweet(cursor);
     });
@@ -70,7 +72,7 @@ class _StatusScreenState extends State<_StatusScreen> {
     try {
       var isFirstPage = _pagingController.nextPageKey == null;
 
-      var result = await Twitter.getTweet(widget.id, cursor: cursor);
+      var result = await _twitter.getTweet(widget.id);
       if (!mounted) {
         return;
       }

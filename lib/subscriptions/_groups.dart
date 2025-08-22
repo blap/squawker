@@ -4,9 +4,9 @@ import 'package:dotted_border/dotted_border.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
-import 'package:flutter_iconpicker_plus/flutter_iconpicker.dart';
+import 'package:flutter_iconpicker/flutter_iconpicker.dart';
 import 'package:flutter_triple/flutter_triple.dart';
-import 'package:material_symbols_icons/symbols.dart';
+import 'package:flutter/material.dart';
 import 'package:squawker/constants.dart';
 import 'package:squawker/database/entities.dart';
 import 'package:squawker/generated/l10n.dart';
@@ -112,7 +112,7 @@ class _SubscriptionGroupsState extends State<SubscriptionGroups> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Icon(Symbols.add_rounded, size: 16),
+                        const Icon(Icons.add_rounded, size: 16),
                         const SizedBox(height: 4),
                         Text(
                           L10n.of(context).newTrans,
@@ -325,7 +325,7 @@ class _SubscriptionGroupEditDialogState extends State<SubscriptionGroupEditDialo
                     ),
                   ),
                   IconButton(
-                    icon: Icon(Symbols.palette_rounded, color: color),
+                    icon: Icon(Icons.palette_rounded, color: color),
                     onPressed: () {
                       showDialog(
                           context: context,
@@ -364,24 +364,27 @@ class _SubscriptionGroupEditDialogState extends State<SubscriptionGroupEditDialo
                           });
                     },
                   ),
+                  /*
                   IconButton(
                     icon: Icon(deserializeIconData(icon)),
                     onPressed: () async {
-                      var selectedIcon = await FlutterIconPicker.showIconPicker(context,
-                          iconPackModes: [IconPack.lineAwesomeIcons],
-                          title: Text(L10n.of(context).pick_an_icon),
-                          closeChild: Text(L10n.of(context).close),
-                          searchClearIcon: Icon(Symbols.close),
-                          searchIcon: Icon(Symbols.search),
-                          searchHintText: L10n.of(context).search,
-                          noResultsText: L10n.of(context).no_results_for);
+                      var selectedIcon = await showIconPicker(context,
+                          configuration: SinglePickerConfiguration(
+                            iconPackModes: [IconPack.lineAwesomeIcons],
+                            title: Text(L10n.of(context).pick_an_icon),
+                            closeChild: Text(L10n.of(context).close),
+                            searchClearIcon: Icon(Icons.close),
+                            searchIcon: Icon(Icons.search),
+                            searchHintText: L10n.of(context).search,
+                          noResultsText: L10n.of(context).no_results_for));
                       if (selectedIcon != null) {
                         setState(() {
-                          icon = jsonEncode(serializeIcon(selectedIcon));
+                                                    icon = jsonEncode(serializeIcon(selectedIcon));
                         });
                       }
                     },
                   )
+                  */
                 ],
               ),
               Expanded(
@@ -395,7 +398,7 @@ class _SubscriptionGroupEditDialogState extends State<SubscriptionGroupEditDialo
                         subscription is SearchSubscription ? L10n.current.search_term : '@${subscription.screenName}';
 
                     var icon = subscription is SearchSubscription
-                        ? const SizedBox(width: 48, child: Icon(Symbols.search_rounded))
+                        ? const SizedBox(width: 48, child: Icon(Icons.search_rounded))
                         : UserAvatar(uri: subscription.profileImageUrlHttps);
 
                     return CheckboxListTile(

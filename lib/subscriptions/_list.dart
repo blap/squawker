@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_triple/flutter_triple.dart';
-import 'package:material_symbols_icons/symbols.dart';
+import 'package:flutter/material.dart';
 import 'package:pref/pref.dart';
 import 'package:squawker/constants.dart';
 import 'package:squawker/database/entities.dart';
@@ -102,7 +102,7 @@ class SubscriptionUsersListState extends State<SubscriptionUsersList> {
           return ListTile(
             key: Key(user.screenName),
             dense: true,
-            leading: const SizedBox(width: 48, child: Icon(Symbols.search_rounded)),
+                          leading: const SizedBox(width: 48, child: Icon(Icons.search_rounded)),
             title: Text(user.name, maxLines: 1, overflow: TextOverflow.ellipsis),
             subtitle: Text(L10n.current.search_term),
             trailing: SizedBox(

@@ -3,7 +3,7 @@ import 'package:dart_twitter_api/twitter_api.dart';
 import 'package:extended_image/extended_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_triple/flutter_triple.dart';
-import 'package:material_symbols_icons/symbols.dart';
+import 'package:flutter/material.dart';
 import 'package:squawker/constants.dart';
 import 'package:squawker/database/entities.dart';
 import 'package:squawker/generated/l10n.dart';
@@ -30,7 +30,7 @@ Widget _createUserAvatar(String? uri, double size) {
       loadStateChanged: (state) {
         switch (state.extendedImageLoadState) {
           case LoadState.failed:
-            return const Icon(Symbols.error_rounded);
+            return const Icon(Icons.error_rounded);
           default:
             return state.completedWidget;
         }
@@ -51,7 +51,7 @@ Widget _expandUserAvatar(String? uri, double size) {
       loadStateChanged: (state) {
         switch (state.extendedImageLoadState) {
           case LoadState.failed:
-            return const Icon(Symbols.error_rounded);
+            return const Icon(Icons.error_rounded);
           default:
             return state.completedWidget;
         }
@@ -89,7 +89,7 @@ class UserTile extends StatelessWidget {
         children: [
           Flexible(child: Text(user.name, maxLines: 1, overflow: TextOverflow.ellipsis)),
           if (user.verified) const SizedBox(width: 6),
-          if (user.verified) Icon(Symbols.verified, size: 14, color: Theme.of(context).primaryColor)
+          if (user.verified) Icon(Icons.verified, size: 14, color: Theme.of(context).primaryColor)
         ],
       ),
       subtitle: Text('@${user.screenName}', maxLines: 1, overflow: TextOverflow.ellipsis),
@@ -132,7 +132,7 @@ class _FollowButtonSelectGroupDialogState extends State<FollowButtonSelectGroupD
           Text(L10n.of(context).select),
           Spacer(),
           IconButton(
-            icon: const Icon(Symbols.add),
+            icon: const Icon(Icons.add),
             onPressed: () async {
               await openSubscriptionGroupDialog(context, null, '', defaultGroupIcon, preMembers: {widget.user.id});
               Navigator.pop(context, 'reload');
@@ -143,8 +143,8 @@ class _FollowButtonSelectGroupDialogState extends State<FollowButtonSelectGroupD
       searchHint: L10n.of(context).search,
       confirmText: Text(L10n.of(context).ok),
       cancelText: Text(L10n.of(context).cancel),
-      searchIcon: Icon(Symbols.search_rounded, color: color),
-      closeSearchIcon: Icon(Symbols.close_rounded, color: color),
+      searchIcon: Icon(Icons.search_rounded, color: color),
+      closeSearchIcon: Icon(Icons.close_rounded, color: color),
       itemsTextStyle: Theme.of(context).textTheme.bodyLarge,
       selectedColor: Theme.of(context).colorScheme.secondary,
       unselectedColor: color,
@@ -181,8 +181,8 @@ class FollowButton extends StatelessWidget {
         var inFeed = followed ? state.any((element) => element.id == user.id && element.inFeed) : false;
 
         var icon = followed
-          ? (inFeed ? Icon(Symbols.person_remove_rounded, color: color) : const Icon(Symbols.person_remove_rounded, color: Colors.red))
-          : Icon(Symbols.person_add_rounded, color: color);
+          ? (inFeed ? Icon(Icons.person_remove_rounded, color: color) : const Icon(Icons.person_remove_rounded, color: Colors.red))
+          : Icon(Icons.person_add_rounded, color: color);
         var textSub = followed ? L10n.of(context).unsubscribe : L10n.of(context).subscribe;
         var textFeed = followed ? (inFeed ? L10n.of(context).remove_from_feed : L10n.of(context).add_to_feed) : null;
 

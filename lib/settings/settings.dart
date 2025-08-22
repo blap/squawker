@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:material_symbols_icons/symbols.dart';
+import 'package:flutter/material.dart';
 import 'package:squawker/constants.dart';
 import 'package:squawker/generated/l10n.dart';
 import 'package:squawker/settings/_about.dart';
@@ -51,7 +51,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         children: [
           ListTile(
             title: Text(L10n.of(context).general),
-            leading: Icon(Symbols.settings),
+            leading: Icon(Icons.settings),
             onTap: () => Navigator.push(
               context,
               navigationAnimationsEnabled
@@ -61,7 +61,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           ListTile(
             title: Text(L10n.of(context).account),
-            leading: Icon(Symbols.account_circle_rounded),
+            leading: Icon(Icons.account_circle_rounded),
             onTap: () => Navigator.push(
               context,
               navigationAnimationsEnabled
@@ -71,7 +71,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           ListTile(
             title: Text(L10n.of(context).home),
-            leading: Icon(Symbols.home),
+            leading: Icon(Icons.home),
             onTap: () => Navigator.push(
               context,
               navigationAnimationsEnabled
@@ -81,7 +81,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           ListTile(
             title: Text(L10n.of(context).theme),
-            leading: Icon(Symbols.palette),
+            leading: Icon(Icons.palette),
             onTap: () => Navigator.push(
               context,
               navigationAnimationsEnabled
@@ -91,7 +91,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           ListTile(
             title: Text(L10n.of(context).data),
-            leading: Icon(Symbols.storage),
+            leading: Icon(Icons.storage),
             onTap: () => Navigator.push(
               context,
               navigationAnimationsEnabled
@@ -101,7 +101,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           ListTile(
             title: Text(L10n.of(context).about),
-            leading: Icon(Symbols.info),
+            leading: Icon(Icons.info),
             onTap: () => Navigator.push(
               context,
               navigationAnimationsEnabled

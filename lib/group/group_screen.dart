@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_triple/flutter_triple.dart';
-import 'package:material_symbols_icons/symbols.dart';
+import 'package:flutter/material.dart';
 import 'package:pref/pref.dart';
 import 'package:provider/provider.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
@@ -53,7 +53,7 @@ class SubscriptionGroupScreenContent extends StatelessWidget {
       query.write('-filter:replies AND ');
     }
     if (!includeRetweets) {
-      query.write('-filter:retweets AND ');
+      query.write(' -filter:retweets AND ');
     }
     else {
       query.write('include:nativeretweets AND ');
@@ -105,11 +105,6 @@ class SubscriptionGroupScreenContent extends StatelessWidget {
       onError: (_, error) =>
           ScaffoldErrorWidget(error: error, stackTrace: null, prefix: L10n.current.unable_to_load_the_group),
       onState: (_, group) {
-        // TODO: This is pretty gross. Figure out how to have a "no data" state
-        if (group.id.isEmpty) {
-          return Container(key: Key('group_id_empty'));
-        }
-
         // Split the users into chunks, oldest first, to prevent thrashing of all groups when a new user is added
         var filteredUsers = group.id == '-1' ? group.subscriptions.where((elm) => elm.inFeed) : group.subscriptions;
         var users = filteredUsers.sorted((a, b) => a.createdAt.compareTo(b.createdAt)).toList();
@@ -174,15 +169,15 @@ class SubscriptionGroupScreen extends StatelessWidget {
                 floating: true,
                 title: Text(name),
                 actions: [
-                  IconButton(icon: const Icon(Symbols.more_vert), onPressed: () => showFeedSettings(context, model)),
+                  IconButton(icon: const Icon(Icons.more_vert), onPressed: () => showFeedSettings(context, model)),
                   IconButton(
-                      icon: const Icon(Symbols.arrow_upward_rounded),
+                      icon: const Icon(Icons.arrow_upward_rounded),
                       onPressed: () async {
                         await content.scrollController!.scrollTo(index: 0,
                           duration: const Duration(seconds: 1), curve: Curves.easeInOut);
                       }),
                   IconButton(
-                    icon: const Icon(Symbols.refresh_rounded),
+                    icon: const Icon(Icons.refresh_rounded),
                     onPressed: () async {
                       GlobalKey<SubscriptionGroupFeedState>? sgfKey = DataService().map['feed_key_${id.replaceAll('-', '_')}'];
                       if (sgfKey?.currentState != null) {

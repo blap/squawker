@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:material_symbols_icons/symbols.dart';
+import 'package:flutter/material.dart';
 import 'package:squawker/trends/_list.dart';
 import 'package:squawker/trends/_settings.dart';
 import 'package:squawker/trends/_tabs.dart';
@@ -22,7 +22,7 @@ class _TrendsScreenState extends State<TrendsScreen> with AutomaticKeepAliveClie
     return Scaffold(
       appBar: const TrendsTabBar(),
       floatingActionButton: FloatingActionButton(
-          child: const Icon(Symbols.add_rounded),
+          child: const Icon(Icons.add_rounded),
           onPressed: () async => showModalBottomSheet(
                 context: context,
                 builder: (context) => const TrendsSettings(),

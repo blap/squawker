@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_triple/flutter_triple.dart';
-import 'package:material_symbols_icons/symbols.dart';
+import 'package:flutter/material.dart';
 import 'package:squawker/generated/l10n.dart';
 import 'package:squawker/home/home_model.dart';
 import 'package:squawker/ui/errors.dart';
@@ -18,7 +18,7 @@ class SettingsHomeFragment extends StatelessWidget {
         title: Text(L10n.current.home),
         actions: [
           IconButton(
-            icon: const Icon(Symbols.restart_alt),
+            icon: const Icon(Icons.restart_alt),
             tooltip: L10n.current.reset_home_pages,
             onPressed: () async => await model.resetPages())
         ],
@@ -43,7 +43,7 @@ class SettingsHomeFragment extends StatelessWidget {
 
                 return CheckboxListTile(
                   key: Key(page.id),
-                  secondary: const Icon(Symbols.drag_handle),
+                  secondary: const Icon(Icons.drag_handle),
                   title: Text(page.page.titleBuilder(context)),
                   value: page.selected,
                   onChanged: (value) async {

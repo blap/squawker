@@ -3,7 +3,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localized_locales/flutter_localized_locales.dart';
 import 'package:flutter_swipe_action_cell/flutter_swipe_action_cell.dart';
-import 'package:material_symbols_icons/symbols.dart';
+import 'package:flutter/material.dart';
 import 'package:squawker/client/app_http_client.dart';
 import 'package:squawker/constants.dart';
 import 'package:squawker/database/repository.dart';
@@ -238,7 +238,7 @@ class SettingsGeneralFragment extends StatelessWidget {
           ),
           ExpansionTile(
             title: Text(L10n.of(context).media),
-            leading: const Icon(Symbols.image),
+            leading: const Icon(Icons.image),
             children: [
               PrefDropdown(
                   fullWidth: false,
@@ -294,7 +294,7 @@ class SettingsGeneralFragment extends StatelessWidget {
           ),
           ExpansionTile(
             title: Text(L10n.of(context).feed),
-            leading: const Icon(Symbols.rss_feed),
+            leading: const Icon(Icons.rss_feed),
             children: [
               PrefSwitch(
                 title: Text(L10n.of(context).keep_feed_offset_label),
@@ -321,7 +321,7 @@ class SettingsGeneralFragment extends StatelessWidget {
           ),
           ExpansionTile(
             title: Text(L10n.of(context).x_api),
-            leading: const Icon(Symbols.api),
+            leading: const Icon(Icons.api),
             children: [
               PrefSwitch(
                 title: Text(L10n.of(context).enhanced_feeds_label),
@@ -472,7 +472,7 @@ class ExclusionsFeedSettingState extends State<ExclusionsFeedSetting> {
         ),
         child: Icon(
           size: 20,
-          isLast ? Symbols.add : Symbols.remove,
+          isLast ? Icons.add : Icons.remove,
           color: Colors.white,
         ),
       ),
@@ -605,7 +605,7 @@ class _TranslatorsListState extends State<TranslatorsList> {
               width: 100,
               child:
                 PrefButton(
-                  child: Icon(Symbols.add),
+                  child: Icon(Icons.add),
                   onTap: () async {
                     Map<String,dynamic> trHost = {
                       'host': null,
@@ -654,7 +654,7 @@ class _TranslatorsListState extends State<TranslatorsList> {
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(fontSize: Theme.of(context).textTheme.labelMedium!.fontSize)),
                     trailing: IconButton(
-                      icon: const Icon(Symbols.edit, size: 20),
+                      icon: const Icon(Icons.edit, size: 20),
                       onPressed: () async {
                         Map<String,dynamic> trHost = _translationHosts[index];
                         var result = await showDialog<bool>(

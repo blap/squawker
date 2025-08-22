@@ -2,7 +2,7 @@ import 'package:chewie/chewie.dart';
 import 'package:dart_twitter_api/twitter_api.dart';
 import 'package:extended_image/extended_image.dart';
 import 'package:flutter/material.dart';
-import 'package:material_symbols_icons/symbols.dart';
+import 'package:flutter/material.dart';
 import 'package:pref/pref.dart';
 import 'package:squawker/constants.dart';
 import 'package:squawker/generated/l10n.dart';
@@ -13,7 +13,7 @@ import 'package:path/path.dart' as path;
 import 'package:provider/provider.dart';
 import 'package:video_player/video_player.dart';
 import 'package:visibility_detector/visibility_detector.dart';
-import 'package:wakelock/wakelock.dart';
+import 'package:wakelock_plus/wakelock_plus.dart';
 
 class TweetVideoUrls {
   final String streamUrl;
@@ -111,7 +111,7 @@ class _TweetVideoState extends State<TweetVideo> {
             if (video == null) {
               ScaffoldMessenger.of(context).clearSnackBars();
               ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                content: Text(L10n.current.download_media_no_url),
+                content: Text(L10n.of(context).download_media_no_url),
               ));
               return;
             }
@@ -139,7 +139,7 @@ class _TweetVideoState extends State<TweetVideo> {
               },
             );
           },
-          iconData: Symbols.download_rounded,
+          iconData: Icons.download_rounded,
           title: L10n.of(context).download,
         )
       ],
@@ -151,7 +151,7 @@ class _TweetVideoState extends State<TweetVideo> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               const Icon(
-                Symbols.error_rounded,
+                Icons.error_rounded,
                 color: Colors.white,
                 size: 42,
               ),
@@ -165,9 +165,9 @@ class _TweetVideoState extends State<TweetVideo> {
     _videoController!.addListener(() {
       // Change wake lock screen
       if (_chewieController!.isPlaying) {
-        Wakelock.enable();
+        WakelockPlus.enable();
       } else {
-        Wakelock.disable();
+        WakelockPlus.disable();
       }
     });
   }
@@ -221,7 +221,7 @@ class _TweetVideoState extends State<TweetVideo> {
       _videoController?.dispose();
       _chewieController?.dispose();
 
-      Wakelock.disable();
+      WakelockPlus.disable();
     }
 
     super.dispose();

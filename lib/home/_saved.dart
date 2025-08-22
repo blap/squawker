@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_triple/flutter_triple.dart';
-import 'package:material_symbols_icons/symbols.dart';
+import 'package:flutter/material.dart';
 import 'package:pref/pref.dart';
 import 'package:provider/provider.dart';
 import 'package:squawker/client/client.dart';
@@ -127,7 +127,7 @@ class SavedTweetTooLarge extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             ListTile(
-              leading: const Icon(Symbols.error, color: Colors.red),
+              leading: const Icon(Icons.error, color: Colors.red),
               title: Text(L10n.current.oops_something_went_wrong),
               subtitle: Text(L10n.current.saved_tweet_too_large),
             ),

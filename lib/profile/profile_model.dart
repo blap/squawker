@@ -10,13 +10,17 @@ class Profile {
 }
 
 class ProfileModel extends Store<Profile> {
-  ProfileModel() : super(Profile(UserWithExtra(), []));
+  late final Twitter _twitter;
+
+  ProfileModel() : super(Profile(UserWithExtra(), [])) {
+    _twitter = Twitter();
+  }
 
   Future<void> loadProfileById(String id) async {
-    await execute(() async => await Twitter.getProfileById(id));
+    await execute(() async => await _twitter.getProfileById(id));
   }
 
   Future<void> loadProfileByScreenName(String screenName) async {
-    await execute(() async => await Twitter.getProfileByScreenName(screenName));
+    await execute(() async => await _twitter.getProfileByScreenName(screenName));
   }
 }

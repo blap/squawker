@@ -18,6 +18,7 @@ class ProfileFollows extends StatefulWidget {
 }
 
 class _ProfileFollowsState extends State<ProfileFollows> with AutomaticKeepAliveClientMixin<ProfileFollows> {
+  late final Twitter _twitter;
   late PagingController<int?, UserWithExtra> _pagingController;
 
   final int _pageSize = 200;
@@ -29,6 +30,7 @@ class _ProfileFollowsState extends State<ProfileFollows> with AutomaticKeepAlive
   void initState() {
     super.initState();
 
+    _twitter = Twitter();
     _pagingController = PagingController(firstPageKey: null);
     _pagingController.addPageRequestListener((cursor) {
       _loadFollows(cursor);
@@ -43,7 +45,7 @@ class _ProfileFollowsState extends State<ProfileFollows> with AutomaticKeepAlive
 
   Future _loadFollows(int? cursor) async {
     try {
-      var result = await Twitter.getProfileFollows(
+      var result = await _twitter.getProfileFollows(
         widget.user.screenName!,
         widget.type,
         cursor: cursor,

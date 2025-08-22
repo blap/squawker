@@ -3,7 +3,7 @@ import 'package:extended_nested_scroll_view/extended_nested_scroll_view.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_triple/flutter_triple.dart';
-import 'package:material_symbols_icons/symbols.dart';
+import 'package:flutter/material.dart';
 import 'package:squawker/client/client_account.dart';
 import 'package:squawker/constants.dart';
 import 'package:squawker/database/entities.dart';
@@ -344,9 +344,9 @@ class _ProfileScreenBodyState extends State<ProfileScreenBody> with TickerProvid
                                               overflow: TextOverflow.ellipsis,
                                               style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700)),
                                         ),
-                                        if (user.verified ?? false) const SizedBox(width: 6),
+                                        if (user.verified ?? false) const SizedBox(width: 4),
                                         if (user.verified ?? false)
-                                          Icon(Symbols.verified_rounded,
+                                          Icon(Icons.verified_rounded,
                                               size: 24, color: Theme.of(context).primaryColor)
                                       ],
                                     ),
@@ -477,7 +477,8 @@ class _ProfileScreenBodyState extends State<ProfileScreenBody> with TickerProvid
                                                       );
                                                     }),
                                                   ],
-                                                )),
+                                                ),
+                                              ),
                                             if (user.createdAt != null)
                                               Padding(
                                                 padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 0),
@@ -524,7 +525,7 @@ class _ProfileScreenBodyState extends State<ProfileScreenBody> with TickerProvid
                           mainAxisAlignment: MainAxisAlignment.end,
                           children:[
                             IconButton(
-                              icon: const Icon(Symbols.search),
+                              icon: const Icon(Icons.search),
                               color: Colors.white,
                               onPressed: () => pushNamedRoute(context, routeSearch, SearchArguments(1, focusInputOnOpen: true, query: 'from:@${user.screenName!} ')),
                             ),
@@ -590,7 +591,7 @@ class _ProfileScreenBodyState extends State<ProfileScreenBody> with TickerProvid
           ? null
           : FloatingActionButton(
               onPressed: _scrollToTop,
-              child: const Icon(Symbols.arrow_upward_rounded),
+              child: const Icon(Icons.arrow_upward_rounded),
             ),
     );
   }

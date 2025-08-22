@@ -2,9 +2,9 @@ import 'dart:convert';
 import 'dart:developer';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_iconpicker_plus/flutter_iconpicker.dart';
+import 'package:flutter_iconpicker/flutter_iconpicker.dart';
 import 'package:flutter_triple/flutter_triple.dart';
-import 'package:material_symbols_icons/symbols.dart';
+import 'package:flutter/material.dart';
 import 'package:squawker/constants.dart';
 import 'package:squawker/database/entities.dart';
 import 'package:squawker/database/repository.dart';
@@ -18,14 +18,14 @@ IconData deserializeIconData(String iconData) {
   try {
     var icon = deserializeIcon(jsonDecode(iconData));
     if (icon != null) {
-      return icon;
+      return icon.data!;
     }
   } catch (e, stackTrace) {
     log('Unable to deserialize icon', error: e, stackTrace: stackTrace);
   }
 
   // Use this as a default;
-  return Symbols.rss_feed_rounded;
+  return Icons.rss_feed_rounded;
 }
 
 class GroupModel extends Store<SubscriptionGroupGet> {

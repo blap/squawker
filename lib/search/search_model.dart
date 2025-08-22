@@ -3,7 +3,11 @@ import 'package:squawker/client/client.dart';
 import 'package:squawker/user.dart';
 
 class SearchTweetsModel extends Store<SearchStatus<TweetWithCard>> {
-  SearchTweetsModel() : super(SearchStatus(items: []));
+  late final Twitter _twitter;
+
+  SearchTweetsModel() : super(SearchStatus(items: [])) {
+    _twitter = Twitter();
+  }
 
   Future<void> searchTweets(String query, bool enhanced, {bool trending = false, String? cursor}) async {
     await execute(() async {
@@ -11,11 +15,11 @@ class SearchTweetsModel extends Store<SearchStatus<TweetWithCard>> {
         return SearchStatus(items: []);
       } else {
         if (enhanced) {
-          TweetStatus ts = await Twitter.searchTweetsGraphql(query, true, trending: trending, cursor: cursor);
+          TweetStatus ts = await _twitter.searchTweetsGraphql(query, true, trending: trending, cursor: cursor);
           return SearchStatus(items: ts.chains.map((e) => e.tweets).expand((e) => e).toList(), cursorBottom: ts.cursorBottom);
         }
         else {
-          TweetStatus ts = await Twitter.searchTweets(query, true, cursor: cursor, cursorType: cursor != null ? 'cursor_bottom' : null);
+          TweetStatus ts = await _twitter.searchTweets(query, true, cursor: cursor, cursorType: cursor != null ? 'cursor_bottom' : null);
           return SearchStatus(items: ts.chains.map((e) => e.tweets).expand((e) => e).toList(), cursorBottom: ts.cursorBottom);
         }
       }
@@ -24,7 +28,11 @@ class SearchTweetsModel extends Store<SearchStatus<TweetWithCard>> {
 }
 
 class SearchUsersModel extends Store<SearchStatus<UserWithExtra>> {
-  SearchUsersModel() : super(SearchStatus(items: []));
+  late final Twitter _twitter;
+
+  SearchUsersModel() : super(SearchStatus(items: [])) {
+    _twitter = Twitter();
+  }
 
   Future<void> searchUsers(String query, bool enhanced, {String? cursor}) async {
     await execute(() async {
@@ -32,10 +40,10 @@ class SearchUsersModel extends Store<SearchStatus<UserWithExtra>> {
         return SearchStatus(items: []);
       } else {
         if (enhanced) {
-          return await Twitter.searchUsersGraphql(query, limit: 100, cursor: cursor);
+          return await _twitter.searchUsersGraphql(query, limit: 100, cursor: cursor);
         }
         else {
-          return await Twitter.searchUsers(query, limit: 100);
+          return await _twitter.searchUsers(query, limit: 100);
         }
       }
     });

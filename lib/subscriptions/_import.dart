@@ -2,8 +2,6 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:material_symbols_icons/symbols.dart';
-
 import 'package:squawker/client/client.dart';
 import 'package:squawker/client/client_account.dart';
 import 'package:squawker/database/entities.dart';
@@ -25,6 +23,13 @@ class SubscriptionImportScreen extends StatefulWidget {
 }
 
 class _SubscriptionImportScreenState extends State<SubscriptionImportScreen> {
+  late final Twitter _twitter;
+
+  @override
+  void initState() {
+    super.initState();
+    _twitter = Twitter();
+  }
   String? _fromScreenName;
   String? _specificScreenNames;
   StreamController<int>? _streamController;
@@ -42,7 +47,7 @@ class _SubscriptionImportScreenState extends State<SubscriptionImportScreen> {
       _streamController?.add(0);
 
       int? cursor;
-      int total = 0;
+      var total = 0;
 
       // TODO: Test this still works
       var importModel = context.read<ImportDataModel>();
@@ -52,14 +57,14 @@ class _SubscriptionImportScreenState extends State<SubscriptionImportScreen> {
 
       if (_fromScreenName?.trim().isNotEmpty ?? false) {
         while (true) {
-          var response = await Twitter.getProfileFollows(
+          var response = await _twitter.getProfileFollows(
             _fromScreenName!,
             'following',
             cursor: cursor,
           );
 
           cursor = response.cursorBottom;
-          total = total + response.users.length;
+          total += response.users.length as int;
 
           if (response.users.isNotEmpty) {
             await importModel.importData({
@@ -74,7 +79,8 @@ class _SubscriptionImportScreenState extends State<SubscriptionImportScreen> {
                     createdAt: createdAt))
               ]
             });
-          } else {
+          }
+          else {
             break;
           }
 
@@ -90,14 +96,16 @@ class _SubscriptionImportScreenState extends State<SubscriptionImportScreen> {
         List<UserWithExtra> users = [];
 
         if (TwitterAccount.hasAccountAvailable()) {
-          users = await Twitter.getUsersByScreenName(
+          users = await _twitter.getUsersByScreenName(
               _specificScreenNames!.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty));
-        } else {
+        }
+        else {
           for (String screenName in _specificScreenNames!.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty)) {
             try {
-              users.add((await Twitter.getProfileByScreenName(screenName)).user);
-            } catch (err, _) {
-              _streamController?.addError(err, _);
+              users.add((await _twitter.getProfileByScreenName(screenName)).user);
+            }
+            catch (err, _) {
+              _streamController?.addError(err, null);
             }
           }
         }
@@ -126,7 +134,8 @@ class _SubscriptionImportScreenState extends State<SubscriptionImportScreen> {
       _streamController?.close();
 
       DataService().map['toggleKeepFeed'] = true;
-    } catch (e, stackTrace) {
+    }
+    catch (e, stackTrace) {
       _streamController?.addError(e, stackTrace);
     }
   }
@@ -230,7 +239,7 @@ class _SubscriptionImportScreenState extends State<SubscriptionImportScreen> {
                           children: [
                             const Padding(
                               padding: EdgeInsets.all(16),
-                              child: Icon(Symbols.check_circle_rounded, size: 36, color: Colors.green),
+                              child: Icon(Icons.check_circle_rounded, size: 36, color: Colors.green),
                             ),
                             Text(
                               L10n.of(context).finished_with_snapshotData_users(
@@ -248,7 +257,7 @@ class _SubscriptionImportScreenState extends State<SubscriptionImportScreen> {
         ),
       ),
       floatingActionButton: FloatingActionButton(
-        child: const Icon(Symbols.cloud_download_rounded),
+        child: const Icon(Icons.cloud_download_rounded),
         onPressed: () async => await importSubscriptions(),
       ),
     );
