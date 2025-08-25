@@ -25,7 +25,7 @@ class StatusScreenArguments {
 }
 
 class StatusScreen extends StatelessWidget {
-  const StatusScreen({Key? key}) : super(key: key);
+  const StatusScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -39,7 +39,7 @@ class _StatusScreen extends StatefulWidget {
   final String? username;
   final String id;
 
-  const _StatusScreen({Key? key, required this.username, required this.id}) : super(key: key);
+  const _StatusScreen({required this.username, required this.id});
 
   @override
   _StatusScreenState createState() => _StatusScreenState();
@@ -47,7 +47,10 @@ class _StatusScreen extends StatefulWidget {
 
 class _StatusScreenState extends State<_StatusScreen> {
   late final Twitter _twitter;
-  final _pagingController = PagingController<String?, TweetChain>(firstPageKey: null);
+  late final _pagingController = PagingController<String?, TweetChain>(
+    getNextPageKey: (state) => state.lastPageIsEmpty || state.keys?.isEmpty != false ? null : state.keys!.last,
+    fetchPage: (cursor) => _fetchTweet(cursor),
+  );
   final _scrollController = AutoScrollController();
 
   final _seenAlready = <String>{};
@@ -57,50 +60,47 @@ class _StatusScreenState extends State<_StatusScreen> {
     super.initState();
 
     _twitter = Twitter();
-    _pagingController.addPageRequestListener((cursor) {
-      _loadTweet(cursor);
-    });
   }
 
   @override
   void dispose() {
     _pagingController.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 
-  Future _loadTweet(String? cursor) async {
+  Future<List<TweetChain>> _fetchTweet(String? cursor) async {
     try {
-      var isFirstPage = _pagingController.nextPageKey == null;
+      var isFirstPage = cursor == null;
 
       var result = await _twitter.getTweet(widget.id);
       if (!mounted) {
-        return;
+        return [];
       }
 
-      if (result.cursorBottom != null && result.cursorBottom == _pagingController.nextPageKey) {
-        _pagingController.appendLastPage([]);
-      } else {
-        // Twitter sometimes sends the original replies with all pages, so we need to manually exclude ones that we've already seen
-        var chains = result.chains.skipWhile((element) => _seenAlready.contains(element.id)).toList();
+      // Since we're dealing with a single tweet and its replies, we don't need to check nextPageKey
+      // Twitter sometimes sends the original replies with all pages, so we need to manually exclude ones that we've already seen
+      var chains = result.chains.skipWhile((element) => _seenAlready.contains(element.id)).toList();
 
-        for (var chain in chains) {
-          _seenAlready.add(chain.id);
-        }
-
-        _pagingController.appendPage(chains, result.cursorBottom);
-
-        // If we're on the first page, we want to scroll to the selected status
-        if (isFirstPage) {
-          var statusIndex = chains.indexWhere((e) => e.id == widget.id);
-
-          await _scrollController.scrollToIndex(statusIndex, preferPosition: AutoScrollPosition.begin);
-          await _scrollController.highlight(statusIndex);
-        }
+      for (var chain in chains) {
+        _seenAlready.add(chain.id);
       }
-    } catch (e, stackTrace) {
+
+      // If we're on the first page, we want to scroll to the selected status
+      if (isFirstPage && chains.isNotEmpty) {
+        var statusIndex = chains.indexWhere((e) => e.id == widget.id);
+
+        await _scrollController.scrollToIndex(statusIndex, preferPosition: AutoScrollPosition.begin);
+        await _scrollController.highlight(statusIndex);
+      }
+
+      return chains;
+    } catch (e) {
       if (mounted) {
-        _pagingController.error = [e, stackTrace];
+        // Handle error appropriately
+        rethrow;
       }
+      return [];
     }
   }
 
@@ -111,41 +111,47 @@ class _StatusScreenState extends State<_StatusScreen> {
       appBar: AppBar(),
       body: ChangeNotifierProvider<TweetContextState>(
         create: (context) => TweetContextState(PrefService.of(context, listen: false).get(optionTweetsHideSensitive)),
-        child: PagedListView<String?, TweetChain>(
-          padding: EdgeInsets.zero,
-          pagingController: _pagingController,
-          scrollController: _scrollController,
-          addAutomaticKeepAlives: false,
-          shrinkWrap: true,
-          builderDelegate: PagedChildBuilderDelegate(
-            itemBuilder: (context, chain, index) {
-              return AutoScrollTag(
-                key: ValueKey(chain.id),
-                controller: _scrollController,
-                index: index,
-                highlightColor: Colors.white.withOpacity(1),
-                child: TweetConversation(id: chain.id, tweets: chain.tweets, username: null, isPinned: chain.isPinned),
-              );
-            },
-            firstPageErrorIndicatorBuilder: (context) => FullPageErrorWidget(
-              error: _pagingController.error[0],
-              stackTrace: _pagingController.error[1],
-              prefix: L10n.of(context).unable_to_load_the_tweet,
-              onRetry: () => _loadTweet(_pagingController.firstPageKey),
+        child: PagingListener(
+          controller: _pagingController,
+          builder: (context, state, fetchNextPage) => PagedListView<String?, TweetChain>.separated(
+            state: state,
+            fetchNextPage: fetchNextPage,
+            padding: EdgeInsets.zero,
+            scrollController: _scrollController,
+            addAutomaticKeepAlives: false,
+            shrinkWrap: true,
+            builderDelegate: PagedChildBuilderDelegate(
+              itemBuilder: (context, chain, index) {
+                return AutoScrollTag(
+                  key: ValueKey(chain.id),
+                  controller: _scrollController,
+                  index: index,
+                  highlightColor: Colors.white.withValues(alpha: 1.0),
+                  child: TweetConversation(
+                    id: chain.id,
+                    tweets: chain.tweets,
+                    username: null,
+                    isPinned: chain.isPinned,
+                  ),
+                );
+              },
+              firstPageErrorIndicatorBuilder: (context) => FullPageErrorWidget(
+                error: state.error ?? Exception('Unknown error'),
+                stackTrace: null,
+                prefix: L10n.of(context).unable_to_load_the_tweet,
+                onRetry: () => _pagingController.refresh(),
+              ),
+              newPageErrorIndicatorBuilder: (context) => FullPageErrorWidget(
+                error: state.error ?? Exception('Unknown error'),
+                stackTrace: null,
+                prefix: L10n.of(context).unable_to_load_the_next_page_of_replies,
+                onRetry: () => _pagingController.fetchNextPage(),
+              ),
+              noItemsFoundIndicatorBuilder: (context) {
+                return Center(child: Text(L10n.of(context).could_not_find_any_tweets_by_this_user));
+              },
             ),
-            newPageErrorIndicatorBuilder: (context) => FullPageErrorWidget(
-              error: _pagingController.error[0],
-              stackTrace: _pagingController.error[1],
-              prefix: L10n.of(context).unable_to_load_the_next_page_of_replies,
-              onRetry: () => _loadTweet(_pagingController.nextPageKey),
-            ),
-            noItemsFoundIndicatorBuilder: (context) {
-              return Center(
-                child: Text(
-                  L10n.of(context).could_not_find_any_tweets_by_this_user,
-                ),
-              );
-            },
+            separatorBuilder: (context, index) => const SizedBox.shrink(),
           ),
         ),
       ),

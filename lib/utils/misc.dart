@@ -3,7 +3,6 @@ import 'dart:math';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
-import 'package:http/http.dart' as http;
 import 'package:squawker/client/app_http_client.dart';
 
 const androidChannel = MethodChannel('squawker/android_info');
@@ -13,38 +12,37 @@ List<String>? _supportedTextActivityList;
 const _chars = 'AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz1234567890';
 Random _rnd = Random();
 
-String getRandomString(int length) => String.fromCharCodes(Iterable.generate(
-    length, (_) => _chars.codeUnitAt(_rnd.nextInt(_chars.length))));
+String getRandomString(int length) =>
+    String.fromCharCodes(Iterable.generate(length, (_) => _chars.codeUnitAt(_rnd.nextInt(_chars.length))));
 
-String? cached_public_ip;
+String? cachedPublicIp;
+String? _cachedSystemLocale;
 
 // reference: https://stackoverflow.com/questions/60180934/how-to-get-public-ip-in-flutter
 Future<String?> getPublicIP() async {
   try {
-    if (cached_public_ip != null) {
-      return cached_public_ip;
+    if (cachedPublicIp != null) {
+      return cachedPublicIp;
     }
     var url = Uri.parse('https://api.ipify.org');
     var response = await AppHttpClient.httpGet(url);
     if (response.statusCode == 200) {
       // The response body is the IP in plain text, so just
       // return it as-is.
-      cached_public_ip = response.body;
-      return cached_public_ip;
-    }
-    else {
+      cachedPublicIp = response.body;
+      return cachedPublicIp;
+    } else {
       // The request failed with a non-200 code
       // The ipify.org API has a lot of guaranteed uptime
       // promises, so this shouldn't ever actually happen.
-      print(response.statusCode);
-      print(response.body);
+      debugPrint('getPublicIP failed with status: ${response.statusCode}');
+      debugPrint('Response body: ${response.body}');
       return null;
     }
-  }
-  catch (e) {
+  } catch (e) {
     // Request failed due to an error, most likely because
     // the phone isn't connected to the internet.
-    print(e);
+    debugPrint('getPublicIP error: $e');
     return null;
   }
 }
@@ -82,8 +80,13 @@ bool isTranslatable(String? lang, String? text) {
 }
 
 String getShortSystemLocale() {
-  // TODO: Cache
-  return Platform.localeName.split("_")[0];
+  // Cache the system locale to avoid repeated computations
+  if (_cachedSystemLocale != null) {
+    return _cachedSystemLocale!;
+  }
+
+  _cachedSystemLocale = Platform.localeName.split("_")[0];
+  return _cachedSystemLocale!;
 }
 
 Future<List<String>> getSupportedTextActivityList() async {
@@ -93,10 +96,12 @@ Future<List<String>> getSupportedTextActivityList() async {
   if (_supportedTextActivityList != null) {
     return _supportedTextActivityList!;
   }
-  _supportedTextActivityList = (await androidChannel.invokeMethod('supportedTextActivityList') as List<Object?>).map((e) => e.toString()).toList();
+  _supportedTextActivityList = (await androidChannel.invokeMethod('supportedTextActivityList') as List<Object?>)
+      .map((e) => e.toString())
+      .toList();
   /*
-  print('*** supported text activities:');
-  _supportedTextActivityList!.forEach((e) { print('***   $e'); });
+  debugPrint('*** supported text activities:');
+  _supportedTextActivityList!.forEach((e) { debugPrint('***   $e'); });
   */
   return _supportedTextActivityList!;
 }
@@ -105,11 +110,9 @@ Future<String?> processTextActivity(int index, String value, bool readonly) asyn
   if (!Platform.isAndroid) {
     return null;
   }
-  String? newValue = await androidChannel.invokeMethod('processTextActivity', {
-    'id': index,
-    'value': value,
-    'readonly': readonly,
-  }) as String?;
+  String? newValue =
+      await androidChannel.invokeMethod('processTextActivity', {'id': index, 'value': value, 'readonly': readonly})
+          as String?;
   return newValue;
 }
 
@@ -129,4 +132,3 @@ Future requestPostNotificationsPermissions(AsyncCallback callback) async {
   });
   await androidChannel.invokeMethod('requestPostNotificationsPermissions');
 }
-

@@ -1,5 +1,3 @@
-import com.android.build.OutputFile
-
 plugins {
     id "com.android.application"
     id "kotlin-android"
@@ -42,7 +40,7 @@ def abiCodes = [x86_64:1, 'armeabi-v7a':2, 'arm64-v8a':3]
 
 android {
     namespace "org.ca.squawker"
-    compileSdk flutter.compileSdkVersion
+    compileSdk 35
     ndkVersion flutter.ndkVersion
 
     sourceSets {
@@ -53,24 +51,57 @@ android {
         disable 'InvalidPackage'
     }
 
+    compileOptions {
+        // Enable core library desugaring for flutter_local_notifications and sqflite
+        coreLibraryDesugaringEnabled true
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    kotlinOptions {
+        jvmTarget = '17'
+    }
+    
+    // Add specific configuration for receive_sharing_intent plugin
+    configurations.all {
+        resolutionStrategy {
+            eachDependency { details ->
+                if (details.requested.group == 'org.jetbrains.kotlin') {
+                    details.useVersion '2.1.0'  // Updated Kotlin version to match KGP
+                }
+            }
+        }
+    }
+
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
         applicationId "org.ca.squawker"
         // You can update the following values to match your application needs.
         // For more information, see: https://docs.flutter.dev/deployment/android#reviewing-the-gradle-build-configuration.
-        minSdkVersion flutter.minSdkVersion
-        targetSdkVersion flutter.compileSdkVersion
+        minSdkVersion flutter.minSdkVersion  // Explicitly set minSdkVersion
+        targetSdkVersion 35
         multiDexEnabled true
         versionCode flutterVersionCode.toInteger()
         versionName flutterVersionName
+        
+        // Fix for deprecated android.defaults.buildfeatures.buildconfig option
+        buildFeatures {
+            buildConfig = true
+        }
+        
+        // Suppress ProGuard warnings for missing classes
+        consumerProguardFiles 'proguard-rules.pro'
     }
     
     signingConfigs {
         release {
-            keyAlias keystoreProperties['keyAlias']
-            keyPassword keystoreProperties['keyPassword']
-            storeFile keystoreProperties['storeFile'] ? file(keystoreProperties['storeFile']) : null
-            storePassword keystoreProperties['storePassword']
+            // Only configure signing if we have the required properties
+            if (keystoreProperties['storeFile'] != null) {
+                keyAlias keystoreProperties['keyAlias']
+                keyPassword keystoreProperties['keyPassword']
+                storeFile keystoreProperties['storeFile'] ? file(keystoreProperties['storeFile']) : null
+                storePassword keystoreProperties['storePassword']
+            }
         }
     }
 
@@ -80,14 +111,20 @@ android {
         }
         
         release {
-            signingConfig signingConfigs.release
+            // Only sign the release build if we have a signing configuration
+            if (keystoreProperties['storeFile'] != null) {
+                signingConfig signingConfigs.release
+            } else {
+                // Use debug signing config if no release signing config is available
+                signingConfig signingConfigs.debug
+            }
 
             minifyEnabled = true
             shrinkResources = true
 
             applicationVariants.all { variant ->
                 variant.outputs.all { output ->
-                    def abiName = output.getFilter(OutputFile.ABI)
+                    def abiName = output.filters.find { it.filterType == 'ABI' }?.identifier
                     if (abiName == null) {
                         outputFileName = "squawker-v${defaultConfig.versionName}.apk"
                     } else {
@@ -99,6 +136,18 @@ android {
                     }
                 }
             }
+            
+            // Add ProGuard rules to suppress warnings
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+}
+
+// Add this after the android block to configure subprojects
+android.applicationVariants.all { variant ->
+    variant.runtimeConfiguration.resolutionStrategy.eachDependency { details ->
+        if (details.requested.group == 'androidx.core' && details.requested.name == 'core') {
+            details.useVersion '1.12.0'  // Updated to a stable version
         }
     }
 }
@@ -109,5 +158,15 @@ flutter {
 
 dependencies {
     implementation "androidx.multidex:multidex:2.0.1"
-    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.8.21"
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:2.1.0"  // Updated Kotlin version
+    coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.1.4'
+}
+
+// Add this to configure the sqflite plugin
+configurations.all {
+    resolutionStrategy {
+        dependencySubstitution {
+            substitute module('com.android.support:support-annotations') using module('androidx.annotation:annotation:1.7.1')  // Updated annotation version
+        }
+    }
 }

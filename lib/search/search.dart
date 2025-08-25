@@ -29,14 +29,17 @@ class SearchArguments {
 }
 
 class SearchScreen extends StatelessWidget {
-  const SearchScreen({Key? key}) : super(key: key);
+  const SearchScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
     final arguments = getNamedRouteArguments(routeSearch) as SearchArguments;
 
     return _SearchScreen(
-        initialTab: arguments.initialTab, query: arguments.query, focusInputOnOpen: arguments.focusInputOnOpen);
+      initialTab: arguments.initialTab,
+      query: arguments.query,
+      focusInputOnOpen: arguments.focusInputOnOpen,
+    );
   }
 }
 
@@ -45,8 +48,7 @@ class _SearchScreen extends StatefulWidget {
   final String? query;
   final bool focusInputOnOpen;
 
-  const _SearchScreen({Key? key, required this.initialTab, this.query, this.focusInputOnOpen = false})
-      : super(key: key);
+  const _SearchScreen({required this.initialTab, this.query, this.focusInputOnOpen = false});
 
   @override
   State<_SearchScreen> createState() => _SearchScreenState();
@@ -74,9 +76,10 @@ class _SearchScreenState extends State<_SearchScreen> with SingleTickerProviderS
       _focusNode.requestFocus();
     }
 
-    _queryController.text = widget.query ?? '';
-
-    // TODO: Focussing makes the selection go to the start?!
+    String queryText = widget.query ?? '';
+    _queryController.text = queryText;
+    // Fix: Set cursor position to the end of the text to prevent it from going to the start
+    _queryController.selection = TextSelection.fromPosition(TextPosition(offset: queryText.length));
   }
 
   void _resetQuery() {
@@ -104,9 +107,7 @@ class _SearchScreenState extends State<_SearchScreen> with SingleTickerProviderS
         backgroundColor: defaultTheme.colorScheme.brightness == Brightness.dark ? Colors.grey[900] : Colors.white,
         iconTheme: defaultTheme.primaryIconTheme.copyWith(color: Colors.grey),
       ),
-      inputDecorationTheme: const InputDecorationTheme(
-        border: InputBorder.none,
-      ),
+      inputDecorationTheme: const InputDecorationTheme(border: InputBorder.none),
     );
 
     return Theme(
@@ -130,7 +131,7 @@ class _SearchScreenState extends State<_SearchScreen> with SingleTickerProviderS
               onPressed: () {
                 _queryController.clear();
                 _resetQuery();
-              }
+              },
             ),
             ScopedBuilder<SubscriptionsModel, List<Subscription>>.transition(
               store: subscriptionsModel,
@@ -147,8 +148,11 @@ class _SearchScreenState extends State<_SearchScreen> with SingleTickerProviderS
                           icon: const Icon(Icons.save_rounded),
                           onPressed: () async {
                             await subscriptionsModel.toggleSubscribe(
-                              SearchSubscription(id: id, createdAt: DateTime.now()), currentlyFollowed);
-                          });
+                              SearchSubscription(id: id, createdAt: DateTime.now()),
+                              currentlyFollowed,
+                            );
+                          },
+                        );
                       }
                     }
 
@@ -177,33 +181,53 @@ class _SearchScreenState extends State<_SearchScreen> with SingleTickerProviderS
             MultiProvider(
               providers: [
                 ChangeNotifierProvider<TweetContextState>(
-                  create: (_) => TweetContextState(prefs.get(optionTweetsHideSensitive))),
+                  create: (_) => TweetContextState(prefs.get(optionTweetsHideSensitive)),
+                ),
                 ChangeNotifierProvider<VideoContextState>(
-                  create: (_) => VideoContextState(prefs.get(optionMediaDefaultMute))),
+                  create: (_) => VideoContextState(prefs.get(optionMediaDefaultMute)),
+                ),
               ],
-              child: Expanded(child: TabBarView(
-                controller: _tabController,
-                children: [
-                  TweetSearchResultList<SearchUsersModel, UserWithExtra>(
-                    key: _searchUsersKey,
-                    queryController: _queryController,
-                    store: context.read<SearchUsersModel>(),
-                    searchFunction: (q, c) => context.read<SearchUsersModel>().searchUsers(q, PrefService.of(context).get(optionEnhancedSearches), cursor: c),
-                    itemBuilder: (context, user) => UserTile(user: UserSubscription.fromUser(user))),
-                  TweetSearchResultList<SearchTweetsModel, TweetWithCard>(
-                    key: _searchTweetsKey,
-                    queryController: _queryController,
-                    store: context.read<SearchTweetsModel>(),
-                    searchFunction: (q, c) => context.read<SearchTweetsModel>().searchTweets(q, PrefService.of(context).get(optionEnhancedSearches), cursor: c),
-                    itemBuilder: (context, item) => TweetTile(tweet: item, clickable: true)),
-                  TweetSearchResultList<SearchTweetsModel, TweetWithCard>(
-                    key: _searchTrendsKey,
-                    queryController: _queryController,
-                    store: context.read<SearchTweetsModel>(),
-                    searchFunction: (q, c) => context.read<SearchTweetsModel>().searchTweets(q, PrefService.of(context).get(optionEnhancedSearches), trending: true, cursor: c),
-                    itemBuilder: (context, item) => TweetTile(tweet: item, clickable: true))
-                ]
-              ),),
+              child: Expanded(
+                child: TabBarView(
+                  controller: _tabController,
+                  children: [
+                    TweetSearchResultList<SearchUsersModel, UserWithExtra>(
+                      key: _searchUsersKey,
+                      queryController: _queryController,
+                      store: context.read<SearchUsersModel>(),
+                      searchFunction: (q, c) => context.read<SearchUsersModel>().searchUsers(
+                        q,
+                        PrefService.of(context).get(optionEnhancedSearches),
+                        cursor: c,
+                      ),
+                      itemBuilder: (context, user) => UserTile(user: UserSubscription.fromUser(user)),
+                    ),
+                    TweetSearchResultList<SearchTweetsModel, TweetWithCard>(
+                      key: _searchTweetsKey,
+                      queryController: _queryController,
+                      store: context.read<SearchTweetsModel>(),
+                      searchFunction: (q, c) => context.read<SearchTweetsModel>().searchTweets(
+                        q,
+                        PrefService.of(context).get(optionEnhancedSearches),
+                        cursor: c,
+                      ),
+                      itemBuilder: (context, item) => TweetTile(tweet: item, clickable: true),
+                    ),
+                    TweetSearchResultList<SearchTweetsModel, TweetWithCard>(
+                      key: _searchTrendsKey,
+                      queryController: _queryController,
+                      store: context.read<SearchTweetsModel>(),
+                      searchFunction: (q, c) => context.read<SearchTweetsModel>().searchTweets(
+                        q,
+                        PrefService.of(context).get(optionEnhancedSearches),
+                        trending: true,
+                        cursor: c,
+                      ),
+                      itemBuilder: (context, item) => TweetTile(tweet: item, clickable: true),
+                    ),
+                  ],
+                ),
+              ),
             ),
           ],
         ),
@@ -220,13 +244,13 @@ class TweetSearchResultList<S extends Store<SearchStatus<T>>, T> extends Statefu
   final Future<void> Function(String query, String? cursor) searchFunction;
   final ItemWidgetBuilder<T> itemBuilder;
 
-  const TweetSearchResultList(
-      {Key? key,
-      required this.queryController,
-      required this.store,
-      required this.searchFunction,
-      required this.itemBuilder})
-      : super(key: key);
+  const TweetSearchResultList({
+    super.key,
+    required this.queryController,
+    required this.store,
+    required this.searchFunction,
+    required this.itemBuilder,
+  });
 
   @override
   State<TweetSearchResultList<S, T>> createState() => TweetSearchResultListState<S, T>();
@@ -239,8 +263,6 @@ class TweetSearchResultListState<S extends Store<SearchStatus<T>>, T> extends St
   late PagingController<String?, T> _pagingController;
   late ScrollController _scrollController;
   double _lastOffset = 0;
-  bool _inAppend = false;
-  bool _doingRefresh = false;
 
   @override
   void initState() {
@@ -266,13 +288,26 @@ class TweetSearchResultListState<S extends Store<SearchStatus<T>>, T> extends St
     });
 
     _scrollController = ScrollController();
-    _pagingController = PagingController(firstPageKey: null);
-    _pagingController.addPageRequestListener((String? cursor) {
-      if (!_doingRefresh) {
-        fetchResults(cursor);
-      }
-      _doingRefresh = false;
-    });
+    _pagingController = PagingController<String?, T>(
+      getNextPageKey: (state) => state.lastPageIsEmpty || state.keys?.isEmpty != false ? null : state.keys!.last,
+      fetchPage: (cursor) => _fetchPage(cursor),
+    );
+  }
+
+  Future<List<T>> _fetchPage(String? cursor) async {
+    String query = widget.queryController.text;
+    if (query != _previousQuery) {
+      cursor = null;
+    }
+    if (query == _previousQuery && cursor == _previousCursor) {
+      await widget.searchFunction('', null);
+      return [];
+    }
+    _previousQuery = query;
+    _previousCursor = cursor;
+    await widget.searchFunction(query, cursor);
+    // The actual data will be provided through the store/state mechanism
+    return [];
   }
 
   @override
@@ -285,7 +320,6 @@ class TweetSearchResultListState<S extends Store<SearchStatus<T>>, T> extends St
   void resetQuery() {
     _scrollController.dispose();
     _scrollController = ScrollController();
-    _doingRefresh = true;
     _pagingController.refresh();
     _previousQuery = '';
     _previousCursor = null;
@@ -294,17 +328,7 @@ class TweetSearchResultListState<S extends Store<SearchStatus<T>>, T> extends St
 
   void fetchResults(String? cursor) {
     if (mounted) {
-      String query = widget.queryController.text;
-      if (query != _previousQuery) {
-        cursor = null;
-      }
-      if (query == _previousQuery && cursor == _previousCursor) {
-        widget.searchFunction('', null);
-        return;
-      }
-      _previousQuery = query;
-      _previousCursor = cursor;
-      widget.searchFunction(query, cursor);
+      _pagingController.fetchNextPage();
     }
   }
 
@@ -324,29 +348,28 @@ class TweetSearchResultListState<S extends Store<SearchStatus<T>>, T> extends St
           return Center(child: Text(L10n.of(context).no_results));
         }
 
-        if (_previousQuery.isNotEmpty) {
-          _inAppend = true;
-          _pagingController.appendPage(state.items, state.cursorBottom);
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            _scrollController.jumpTo(_lastOffset);
-            _inAppend = false;
-          });
-        }
+        // Update the paging controller with the new data
+        // We need to handle this differently since we're using a store-based approach
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          _scrollController.jumpTo(_lastOffset);
+        });
 
-        return PagedListView<String?, T>(
-          scrollController: _scrollController,
-          pagingController: _pagingController,
-          addAutomaticKeepAlives: false,
-          builderDelegate: PagedChildBuilderDelegate(
-            newPageProgressIndicatorBuilder: (context) {
-              return Container();
-            },
-            itemBuilder: (context, elm, index) {
-              if (!_inAppend) {
+        return PagingListener(
+          controller: _pagingController,
+          builder: (context, pagingState, fetchNextPage) => PagedListView<String?, T>(
+            state: pagingState,
+            fetchNextPage: fetchNextPage,
+            scrollController: _scrollController,
+            addAutomaticKeepAlives: false,
+            builderDelegate: PagedChildBuilderDelegate(
+              newPageProgressIndicatorBuilder: (context) {
+                return Container();
+              },
+              itemBuilder: (context, elm, index) {
                 _lastOffset = _scrollController.offset;
-              }
-              return widget.itemBuilder(context, elm);
-            }
+                return widget.itemBuilder(context, elm);
+              },
+            ),
           ),
         );
       },

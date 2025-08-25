@@ -32,14 +32,14 @@ class SubscriptionGroupFeed extends StatefulWidget {
   final bool includeRetweets;
   final ItemScrollController? scrollController;
 
-  const SubscriptionGroupFeed(
-      {Key? key,
-      required this.group,
-      required this.searchQueries,
-      required this.includeReplies,
-      required this.includeRetweets,
-      required this.scrollController})
-      : super(key: key);
+  const SubscriptionGroupFeed({
+    super.key,
+    required this.group,
+    required this.searchQueries,
+    required this.includeReplies,
+    required this.includeRetweets,
+    required this.scrollController,
+  });
 
   @override
   State<SubscriptionGroupFeed> createState() => SubscriptionGroupFeedState();
@@ -64,7 +64,7 @@ class SubscriptionGroupFeedState extends State<SubscriptionGroupFeed> with Widge
   Response? _errorResponse;
   int? _positionShowing;
   OverlayEntry? _overlayEntry;
-  final Map<String,int> _tweetIdxDic = {};
+  final Map<String, int> _tweetIdxDic = {};
   bool _isLoading = true;
 
   @override
@@ -104,9 +104,13 @@ class SubscriptionGroupFeedState extends State<SubscriptionGroupFeed> with Widge
   }
 
   Future<void> _checkFetchData() async {
-    if (_data.isEmpty || (_data.length > _lastData.length && (_data.length - _itemPositionsListener.itemPositions.value.first.index) < 20)) {
+    if (_data.isEmpty ||
+        (_data.length > _lastData.length &&
+            (_data.length - _itemPositionsListener.itemPositions.value.first.index) < 20)) {
       await _lock.synchronized(() async {
-        if (_data.isEmpty || (_data.length > _lastData.length && (_data.length - _itemPositionsListener.itemPositions.value.first.index) < 20)) {
+        if (_data.isEmpty ||
+            (_data.length > _lastData.length &&
+                (_data.length - _itemPositionsListener.itemPositions.value.first.index) < 20)) {
           _lastData.clear();
           _lastData.addAll(_data);
           await _listTweets();
@@ -119,18 +123,27 @@ class SubscriptionGroupFeedState extends State<SubscriptionGroupFeed> with Widge
     try {
       if (_keepFeedOffset && _visiblePositionState.initialized && _visiblePositionState.visibleChainId != null) {
         if (kDebugMode) {
-          print('*** _SubscriptionGroupFeedState._updateOffset - widget.group.id=${widget.group.id}, visibleChainId=${_visiblePositionState.visibleChainId}, visibleTweetId=${_visiblePositionState.visibleTweetId}, insert=$_insertOffset');
+          print(
+            '*** _SubscriptionGroupFeedState._updateOffset - widget.group.id=${widget.group.id}, visibleChainId=${_visiblePositionState.visibleChainId}, visibleTweetId=${_visiblePositionState.visibleTweetId}, insert=$_insertOffset',
+          );
         }
         var repository = await Repository.writable();
         if (_insertOffset) {
-          await repository.insert(tableFeedGroupPositionState, {'group_id': widget.group.id, 'chain_id': _visiblePositionState.visibleChainId, 'tweet_id': _visiblePositionState.visibleTweetId});
-        }
-        else {
-          await repository.update(tableFeedGroupPositionState, {'chain_id': _visiblePositionState.visibleChainId, 'tweet_id': _visiblePositionState.visibleTweetId}, where: 'group_id = ?', whereArgs: [widget.group.id]);
+          await repository.insert(tableFeedGroupPositionState, {
+            'group_id': widget.group.id,
+            'chain_id': _visiblePositionState.visibleChainId,
+            'tweet_id': _visiblePositionState.visibleTweetId,
+          });
+        } else {
+          await repository.update(
+            tableFeedGroupPositionState,
+            {'chain_id': _visiblePositionState.visibleChainId, 'tweet_id': _visiblePositionState.visibleTweetId},
+            where: 'group_id = ?',
+            whereArgs: [widget.group.id],
+          );
         }
       }
-    }
-    catch (e, stackTrace) {
+    } catch (e, stackTrace) {
       log.warning('*** ERROR _updateOffset');
       log.warning(e);
       log.warning(stackTrace);
@@ -143,8 +156,7 @@ class SubscriptionGroupFeedState extends State<SubscriptionGroupFeed> with Widge
   }
 
   void refresh() {
-    setState(() {
-    });
+    setState(() {});
   }
 
   Future<void> reloadData() async {
@@ -168,7 +180,11 @@ class SubscriptionGroupFeedState extends State<SubscriptionGroupFeed> with Widge
     }
   }
 
-  Future<List<TweetChain>> _listSearchQueryTweets(RateFetchContext fetchContext, String searchQuery, List<Response> errorResponseLst) async {
+  Future<List<TweetChain>> _listSearchQueryTweets(
+    RateFetchContext fetchContext,
+    String searchQuery,
+    List<Response> errorResponseLst,
+  ) async {
     BasePrefService prefs = PrefService.of(context);
     var repository = await Repository.writable();
     List<TweetChain> tweets = <TweetChain>[];
@@ -177,16 +193,20 @@ class SubscriptionGroupFeedState extends State<SubscriptionGroupFeed> with Widge
     String? cursorType;
     bool requestToDo = false;
 
-    var storedChunks = await repository.query(tableFeedGroupChunk,
-        where: 'group_id = ? AND hash = ?', whereArgs: [widget.group.id, hash], orderBy: 'created_at DESC');
+    var storedChunks = await repository.query(
+      tableFeedGroupChunk,
+      where: 'group_id = ? AND hash = ?',
+      whereArgs: [widget.group.id, hash],
+      orderBy: 'created_at DESC',
+    );
     if (_data.isEmpty) {
       requestToDo = true;
       // Make sure we load any existing stored tweets from the chunk
       var storedChunksTweets = storedChunks
-        .map((e) => jsonDecode(e['response'] as String))
-        .map((e) => List.from(e))
-        .expand((e) => e.map((c) => TweetChain.fromJson(c as Map<String, dynamic>)))
-        .toList();
+          .map((e) => jsonDecode(e['response'] as String))
+          .map((e) => List.from(e))
+          .expand((e) => e.map((c) => TweetChain.fromJson(c as Map<String, dynamic>)))
+          .toList();
 
       // avoid duplicates
       for (var cElm in storedChunksTweets) {
@@ -218,20 +238,26 @@ class SubscriptionGroupFeedState extends State<SubscriptionGroupFeed> with Widge
       TweetStatus result;
       try {
         if (prefs.get(optionEnhancedFeeds)) {
-          result = await _twitter.searchTweetsGraphql(searchQuery, widget.includeReplies, limit: 100,
+          result = await _twitter.searchTweetsGraphql(
+            searchQuery,
+            widget.includeReplies,
+            limit: 100,
             cursor: searchCursor,
             leanerFeeds: prefs.get(optionLeanerFeeds),
-            fetchContext: fetchContext);
-        }
-        else {
-          result = await _twitter.searchTweets(searchQuery, widget.includeReplies, limit: 100,
+            fetchContext: fetchContext,
+          );
+        } else {
+          result = await _twitter.searchTweets(
+            searchQuery,
+            widget.includeReplies,
+            limit: 100,
             cursor: searchCursor,
             cursorType: cursorType,
             leanerFeeds: prefs.get(optionLeanerFeeds),
-            fetchContext: fetchContext);
+            fetchContext: fetchContext,
+          );
         }
-      }
-      catch (rsp) {
+      } catch (rsp) {
         if (rsp is Exception) {
           log.severe(rsp.toString());
         }
@@ -253,11 +279,10 @@ class SubscriptionGroupFeedState extends State<SubscriptionGroupFeed> with Widge
           'hash': hash,
           'cursor_top': result.cursorTop,
           'cursor_bottom': result.cursorBottom,
-          'response': jsonEncode(result.chains.map((e) => e.toJson()).toList())
+          'response': jsonEncode(result.chains.map((e) => e.toJson()).toList()),
         });
       }
-    }
-    else {
+    } else {
       await fetchContext.fetchNoResponse();
     }
 
@@ -284,7 +309,10 @@ class SubscriptionGroupFeedState extends State<SubscriptionGroupFeed> with Widge
     List<Future<List<TweetChain>>> futures = [];
     List<Response> errorResponseLst = [];
 
-    RateFetchContext fetchContext = RateFetchContext(prefs.get(optionEnhancedFeeds) ? Twitter.graphqlSearchTimelineUriPath : Twitter.searchTweetsUriPath, searchQueries.length);
+    RateFetchContext fetchContext = RateFetchContext(
+      prefs.get(optionEnhancedFeeds) ? Twitter.graphqlSearchTimelineUriPath : Twitter.searchTweetsUriPath,
+      searchQueries.length,
+    );
     await fetchContext.init();
 
     for (String searchQuery in searchQueries) {
@@ -311,13 +339,19 @@ class SubscriptionGroupFeedState extends State<SubscriptionGroupFeed> with Widge
       String? positionedChainId;
       String? positionedTweetId;
       if (_keepFeedOffset) {
-        var positionStateData = await repository.query(tableFeedGroupPositionState, where: 'group_id = ?', whereArgs: [widget.group.id]);
+        var positionStateData = await repository.query(
+          tableFeedGroupPositionState,
+          where: 'group_id = ?',
+          whereArgs: [widget.group.id],
+        );
         _insertOffset = positionStateData.isEmpty;
         if (positionStateData.isNotEmpty) {
           positionedChainId = positionStateData[0]['chain_id'] as String?;
           positionedTweetId = positionStateData[0]['tweet_id'] as String?;
           if (kDebugMode) {
-            print('*** _SubscriptionGroupFeedState._listTweets - repository.query - positionedChainId=$positionedChainId, positionedTweetId=$positionedTweetId');
+            print(
+              '*** _SubscriptionGroupFeedState._listTweets - repository.query - positionedChainId=$positionedChainId, positionedTweetId=$positionedTweetId',
+            );
           }
         }
       }
@@ -357,18 +391,23 @@ class SubscriptionGroupFeedState extends State<SubscriptionGroupFeed> with Widge
         if (positionedChainIdx == -1 && threads.isNotEmpty) {
           // find the nearest conversation
           int refId = int.parse(positionedChainId);
-          TweetChain tc = threads.lastWhere((e) {
-            int id = int.parse(e.id);
-            return id > refId;
-          }, orElse: () {
-            return threads[threads.length - 1];
-          });
+          TweetChain tc = threads.lastWhere(
+            (e) {
+              int id = int.parse(e.id);
+              return id > refId;
+            },
+            orElse: () {
+              return threads[threads.length - 1];
+            },
+          );
           positionedChainIdx = threads.indexWhere((e) => e.id == tc.id);
         }
         _visiblePositionState.scrollChainIdx = positionedChainIdx > -1 ? positionedChainIdx : null;
         _visiblePositionState.scrollTweetIdx = positionedTweetIdx > -1 ? positionedTweetIdx : null;
         if (kDebugMode) {
-          print('*** _SubscriptionGroupFeedState._listTweets - setPositionIndexes - _visiblePositionState.scrollChainIdx=${_visiblePositionState.scrollChainIdx}, _visiblePositionState.scrollTweetIdx=${_visiblePositionState.scrollTweetIdx}');
+          print(
+            '*** _SubscriptionGroupFeedState._listTweets - setPositionIndexes - _visiblePositionState.scrollChainIdx=${_visiblePositionState.scrollChainIdx}, _visiblePositionState.scrollTweetIdx=${_visiblePositionState.scrollTweetIdx}',
+          );
         }
       }
 
@@ -392,9 +431,7 @@ class SubscriptionGroupFeedState extends State<SubscriptionGroupFeed> with Widge
       if (threads.isNotEmpty && !_visiblePositionState.initialized && _visiblePositionState.scrollChainIdx != null) {
         _toScroll = true;
       }
-
-    }
-    catch (e, stackTrace) {
+    } catch (e) {
       if (e is Exception) {
         log.severe(e.toString());
         setState(() {
@@ -405,8 +442,7 @@ class SubscriptionGroupFeedState extends State<SubscriptionGroupFeed> with Widge
       if (mounted) {
         // probably something to do
       }
-    }
-    finally {
+    } finally {
       if (_isLoading) {
         setState(() {
           _isLoading = false;
@@ -420,26 +456,23 @@ class SubscriptionGroupFeedState extends State<SubscriptionGroupFeed> with Widge
     if (_overlayEntry == null) {
       RenderBox renderBoxWindow = _key.currentContext!.findRenderObject() as RenderBox;
       Offset positionWindow = renderBoxWindow.localToGlobal(Offset.zero);
-      _overlayEntry = OverlayEntry(builder: (context) {
-        return Positioned(
-          right: 5, // MediaQuery.of(context).size.width * 0.05,
-          top: positionWindow.dy + 5, // MediaQuery.of(context).size.height * 0.15,
-          child: Material(child: Text(_positionShowing == null ? '' : _positionShowing!.toString(), style: TextStyle(
-                    fontSize: Theme.of(context).textTheme.titleMedium!.fontSize)))
-        );
-      });
+      _overlayEntry = OverlayEntry(
+        builder: (context) {
+          return Positioned(
+            right: 5, // MediaQuery.of(context).size.width * 0.05,
+            top: positionWindow.dy + 5, // MediaQuery.of(context).size.height * 0.15,
+            child: Material(
+              child: Text(
+                _positionShowing == null ? '' : _positionShowing!.toString(),
+                style: TextStyle(fontSize: Theme.of(context).textTheme.titleMedium!.fontSize),
+              ),
+            ),
+          );
+        },
+      );
       Overlay.of(context).insert(_overlayEntry!);
-    }
-    else {
+    } else {
       _overlayEntry!.markNeedsBuild();
-    }
-  }
-
-  void _hideOverlay(BuildContext context) {
-    //print('*** _hideOverlay - _visiblePositionState.visibleChainIdx=${_visiblePositionState.visibleChainIdx}');
-    if (_overlayEntry != null) {
-      _overlayEntry!.remove();
-      _overlayEntry = null;
     }
   }
 
@@ -453,33 +486,33 @@ class SubscriptionGroupFeedState extends State<SubscriptionGroupFeed> with Widge
       if (_toScroll) {
         _toScroll = false;
         if (kDebugMode) {
-          print('*** _SubscriptionGroupFeedState._listTweets - scrollController.jumpTo - index=${_visiblePositionState.scrollChainIdx}, widget.group.id=${widget.group.id}');
+          print(
+            '*** _SubscriptionGroupFeedState._listTweets - scrollController.jumpTo - index=${_visiblePositionState.scrollChainIdx}, widget.group.id=${widget.group.id}',
+          );
         }
         widget.scrollController!.jumpTo(index: _visiblePositionState.scrollChainIdx!);
       }
-      if (_errorResponse != null && _data.isNotEmpty && (_errorResponse!.statusCode < 200 || _errorResponse!.statusCode >= 300)) {
+      if (_errorResponse != null &&
+          _data.isNotEmpty &&
+          (_errorResponse!.statusCode < 200 || _errorResponse!.statusCode >= 300)) {
         ScaffoldMessenger.of(context).clearSnackBars();
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(_errorResponse!.body),
-        ));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(_errorResponse!.body)));
         _errorResponse = null;
       }
     });
 
-    if (_errorResponse != null && _data.isEmpty && (_errorResponse!.statusCode < 200 || _errorResponse!.statusCode >= 300)) {
+    if (_errorResponse != null &&
+        _data.isEmpty &&
+        (_errorResponse!.statusCode < 200 || _errorResponse!.statusCode >= 300)) {
       var errorPage = Scaffold(
-        body: FullPageErrorWidget(error: _errorResponse, prefix: 'Error request Twitter/X', stackTrace: null)
+        body: FullPageErrorWidget(error: _errorResponse, prefix: 'Error request Twitter/X', stackTrace: null),
       );
       _errorResponse = null;
       return errorPage;
     }
 
     if (widget.searchQueries.isEmpty) {
-      return Scaffold(
-        body: Center(
-          child: Text(L10n.of(context).this_group_contains_no_subscriptions),
-        ),
-      );
+      return Scaffold(body: Center(child: Text(L10n.of(context).this_group_contains_no_subscriptions)));
     }
 
     return Stack(
@@ -496,27 +529,36 @@ class SubscriptionGroupFeedState extends State<SubscriptionGroupFeed> with Widge
             child: MultiProvider(
               providers: [
                 ChangeNotifierProvider<TweetContextState>(
-                    create: (_) => TweetContextState(prefs.get(optionTweetsHideSensitive))),
+                  create: (_) => TweetContextState(prefs.get(optionTweetsHideSensitive)),
+                ),
                 ChangeNotifierProvider<VideoContextState>(
-                    create: (_) => VideoContextState(prefs.get(optionMediaDefaultMute))),
+                  create: (_) => VideoContextState(prefs.get(optionMediaDefaultMute)),
+                ),
               ],
               child: NotificationListener<ScrollNotification>(
                 onNotification: (ScrollNotification notification) {
-                  if (!_keepFeedOffset || !_visiblePositionState.initialized) {
-                    return false;
-                  }
                   if (notification is UserScrollNotification) {
+                    if (!_keepFeedOffset || !_visiblePositionState.initialized) {
+                      return false;
+                    }
                     if (notification.direction == ScrollDirection.forward) {
-                      if (_visiblePositionState.visibleTweetIdx != null) {
+                      if (_visiblePositionState.visibleTweetIdx != null && mounted) {
                         _positionShowing = _visiblePositionState.visibleTweetIdx!;
                         _showOverlay(context);
                       }
-                    }
-                    else if (notification.direction == ScrollDirection.idle) {
+                    } else if (notification.direction == ScrollDirection.idle) {
                       _positionShowing = null;
+                      // Store the mounted status before the async gap
+                      final isMounted = mounted;
                       Future.delayed(const Duration(seconds: 2), () {
-                        if (_positionShowing == null) {
-                          _hideOverlay(context);
+                        // Use the stored mounted status
+                        if (_positionShowing == null && isMounted) {
+                          // Only call _hideOverlay if we still need to (widget is still mounted)
+                          // We don't pass context across the async gap
+                          if (_overlayEntry != null) {
+                            _overlayEntry!.remove();
+                            _overlayEntry = null;
+                          }
                         }
                       });
                     }
@@ -527,7 +569,15 @@ class SubscriptionGroupFeedState extends State<SubscriptionGroupFeed> with Widge
                   itemCount: _data.length,
                   itemBuilder: (context, index) {
                     TweetChain tc = _data[index];
-                    return TweetConversation(key: ValueKey(tc.id), id: tc.id, username: null, isPinned: tc.isPinned, tweets: tc.tweets, tweetIdxDic: _tweetIdxDic, visiblePositionState: _visiblePositionState);
+                    return TweetConversation(
+                      key: ValueKey(tc.id),
+                      id: tc.id,
+                      username: null,
+                      isPinned: tc.isPinned,
+                      tweets: tc.tweets,
+                      tweetIdxDic: _tweetIdxDic,
+                      visiblePositionState: _visiblePositionState,
+                    );
                   },
                   itemScrollController: widget.scrollController,
                   itemPositionsListener: _itemPositionsListener,
@@ -537,16 +587,9 @@ class SubscriptionGroupFeedState extends State<SubscriptionGroupFeed> with Widge
             ),
           ),
         ),
-        if (_isLoading)
-          const Opacity(
-            opacity: 0.5,
-            child: ModalBarrier(dismissible: false, color: Colors.black),
-          ),
-        if (_isLoading)
-          const Center(
-            child: CircularProgressIndicator(),
-          ),
-      ]
+        if (_isLoading) const Opacity(opacity: 0.5, child: ModalBarrier(dismissible: false, color: Colors.black)),
+        if (_isLoading) const Center(child: CircularProgressIndicator()),
+      ],
     );
   }
 }

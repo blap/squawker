@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:squawker/group/group_model.dart';
 import 'package:squawker/user.dart';
 import 'package:squawker/utils/crypto_util.dart';
+import 'package:squawker/utils/date_utils.dart';
 import 'package:squawker/utils/misc.dart';
 import 'package:intl/intl.dart';
 
@@ -37,22 +38,23 @@ abstract class Subscription with ToMappable {
   final bool inFeed;
   final DateTime createdAt;
 
-  Subscription(
-      {required this.id,
-      required this.screenName,
-      required this.name,
-      required this.profileImageUrlHttps,
-      required this.verified,
-      required this.inFeed,
-      required this.createdAt});
+  Subscription({
+    required this.id,
+    required this.screenName,
+    required this.name,
+    required this.profileImageUrlHttps,
+    required this.verified,
+    required this.inFeed,
+    required this.createdAt,
+  });
 }
 
 class SearchSubscription extends Subscription {
   SearchSubscription({required super.id, required super.createdAt})
-      : super(name: id, screenName: id, verified: false, inFeed: true, profileImageUrlHttps: null);
+    : super(name: id, screenName: id, verified: false, inFeed: true, profileImageUrlHttps: null);
 
   factory SearchSubscription.fromMap(Map<String, Object?> map) {
-    return SearchSubscription(id: map['id'] as String, createdAt: DateTime.parse(map['created_at'] as String));
+    return SearchSubscription(id: map['id'] as String, createdAt: convertTwitterDateTime(map['created_at'] as String)!);
   }
 
   @override
@@ -64,45 +66,48 @@ class SearchSubscription extends Subscription {
 
   @override
   Map<String, dynamic> toMap() {
-    // TODO: Created at date format
+    // Use the same date format as UserSubscription for consistency
     return {'id': id, 'created_at': sqliteDateFormat.format(createdAt)};
   }
 }
 
 class UserSubscription extends Subscription {
-  UserSubscription(
-      {required super.id,
-      required super.screenName,
-      required super.name,
-      required super.profileImageUrlHttps,
-      required super.verified,
-      required super.inFeed,
-      required super.createdAt});
+  UserSubscription({
+    required super.id,
+    required super.screenName,
+    required super.name,
+    required super.profileImageUrlHttps,
+    required super.verified,
+    required super.inFeed,
+    required super.createdAt,
+  });
 
   factory UserSubscription.fromMap(Map<String, Object?> map) {
     var verified = map['verified'] is int;
     var inFeed = map['in_feed'] is int;
-    var createdAt = map['created_at'] == null ? DateTime.now() : DateTime.parse(map['created_at'] as String);
+    var createdAt = map['created_at'] == null ? DateTime.now() : convertTwitterDateTime(map['created_at'] as String)!;
 
     return UserSubscription(
-        id: map['id'] as String,
-        screenName: map['screen_name'] as String,
-        name: map['name'] as String,
-        profileImageUrlHttps: map['profile_image_url_https'] as String?,
-        verified: verified ? map['verified'] == 1 : false,
-        inFeed: inFeed ?  map['in_feed'] == 1 : true,
-        createdAt: createdAt);
+      id: map['id'] as String,
+      screenName: map['screen_name'] as String,
+      name: map['name'] as String,
+      profileImageUrlHttps: map['profile_image_url_https'] as String?,
+      verified: verified ? map['verified'] == 1 : false,
+      inFeed: inFeed ? map['in_feed'] == 1 : true,
+      createdAt: createdAt,
+    );
   }
 
   factory UserSubscription.fromUser(UserWithExtra user) {
     return UserSubscription(
-        id: user.idStr!,
-        screenName: user.screenName!,
-        name: user.name!,
-        profileImageUrlHttps: user.profileImageUrlHttps,
-        verified: user.verified!,
-        inFeed: true,
-        createdAt: user.createdAt!);
+      id: user.idStr!,
+      screenName: user.screenName!,
+      name: user.name!,
+      profileImageUrlHttps: user.profileImageUrlHttps,
+      verified: user.verified!,
+      inFeed: true,
+      createdAt: user.createdAt!,
+    );
   }
 
   @override
@@ -121,7 +126,7 @@ class UserSubscription extends Subscription {
       'profile_image_url_https': profileImageUrlHttps,
       'verified': verified ? 1 : 0,
       'in_feed': inFeed ? 1 : 0,
-      'created_at': sqliteDateFormat.format(createdAt)
+      'created_at': sqliteDateFormat.format(createdAt),
     };
   }
 
@@ -131,7 +136,7 @@ class UserSubscription extends Subscription {
       'screen_name': screenName,
       'name': name,
       'profile_image_url_https': profileImageUrlHttps,
-      'verified': verified
+      'verified': verified,
     });
   }
 }
@@ -146,13 +151,14 @@ class SubscriptionGroup with ToMappable {
 
   IconData get iconData => deserializeIconData(icon);
 
-  SubscriptionGroup(
-      {required this.id,
-      required this.name,
-      required this.icon,
-      required this.color,
-      required this.numberOfMembers,
-      required this.createdAt});
+  SubscriptionGroup({
+    required this.id,
+    required this.name,
+    required this.icon,
+    required this.color,
+    required this.numberOfMembers,
+    required this.createdAt,
+  });
 
   factory SubscriptionGroup.fromMap(Map<String, Object?> json) {
     // This is here to handle imports of data from before v2.15.0
@@ -162,17 +168,24 @@ class SubscriptionGroup with ToMappable {
     }
 
     return SubscriptionGroup(
-        id: json['id'] as String,
-        name: json['name'] as String,
-        icon: icon,
-        color: json['color'] == null ? null : Color(json['color'] as int),
-        numberOfMembers: json['number_of_members'] == null ? 0 : json['number_of_members'] as int,
-        createdAt: DateTime.parse(json['created_at'] as String));
+      id: json['id'] as String,
+      name: json['name'] as String,
+      icon: icon,
+      color: json['color'] == null ? null : Color(json['color'] as int),
+      numberOfMembers: json['number_of_members'] == null ? 0 : json['number_of_members'] as int,
+      createdAt: convertTwitterDateTime(json['created_at'] as String)!,
+    );
   }
 
   @override
   Map<String, dynamic> toMap() {
-    return {'id': id, 'name': name, 'icon': icon, 'color': color?.value, 'created_at': createdAt.toIso8601String()};
+    return {
+      'id': id,
+      'name': name,
+      'icon': icon,
+      'color': color?.toARGB32(),
+      'created_at': createdAt.toIso8601String(),
+    };
   }
 }
 
@@ -184,13 +197,30 @@ class SubscriptionGroupGet {
   bool includeReplies;
   bool includeRetweets;
 
-  SubscriptionGroupGet(
-      {required this.id,
-      required this.name,
-      required this.icon,
-      required this.subscriptions,
-      required this.includeReplies,
-      required this.includeRetweets});
+  SubscriptionGroupGet({
+    required this.id,
+    required this.name,
+    required this.icon,
+    required this.subscriptions,
+    required this.includeReplies,
+    required this.includeRetweets,
+  });
+
+  // Factory method to create a SubscriptionGroupGet from database query results
+  factory SubscriptionGroupGet.fromGroupAndSubscriptions(
+    Map<String, dynamic> group,
+    List<UserSubscription> userSubscriptions,
+    List<SearchSubscription> searchSubscriptions,
+  ) {
+    return SubscriptionGroupGet(
+      id: group['id'] as String,
+      name: group['name'] as String,
+      icon: group['icon'] as String,
+      subscriptions: [...userSubscriptions, ...searchSubscriptions],
+      includeReplies: group['include_replies'] == 1,
+      includeRetweets: group['include_retweets'] == 1,
+    );
+  }
 }
 
 class SubscriptionGroupEdit {
@@ -200,8 +230,13 @@ class SubscriptionGroupEdit {
   Color? color;
   Set<String> members;
 
-  SubscriptionGroupEdit(
-      {required this.id, required this.name, required this.icon, required this.color, required this.members});
+  SubscriptionGroupEdit({
+    required this.id,
+    required this.name,
+    required this.icon,
+    required this.color,
+    required this.members,
+  });
 }
 
 class SubscriptionGroupMember with ToMappable {
@@ -221,7 +256,6 @@ class SubscriptionGroupMember with ToMappable {
 }
 
 class TwitterTokenEntity with ToMappable {
-
   final bool guest;
   final String idStr;
   final String screenName;
@@ -230,14 +264,33 @@ class TwitterTokenEntity with ToMappable {
   final DateTime createdAt;
   TwitterProfileEntity? profile;
 
-  TwitterTokenEntity({required this.guest, required this.idStr, required this.screenName, required this.oauthToken, required this.oauthTokenSecret, required this.createdAt, this.profile});
+  TwitterTokenEntity({
+    required this.guest,
+    required this.idStr,
+    required this.screenName,
+    required this.oauthToken,
+    required this.oauthTokenSecret,
+    required this.createdAt,
+    this.profile,
+  });
 
   static TwitterTokenEntity fromMap(Map<String, dynamic> json) {
-    return _fromMap(json, json['profile'] == null ? null : TwitterProfileEntity.fromMap(json['profile'] as Map<String, dynamic>));
+    return _fromMap(
+      json,
+      json['profile'] == null ? null : TwitterProfileEntity.fromMap(json['profile'] as Map<String, dynamic>),
+    );
   }
 
   static Future<TwitterTokenEntity> fromMapSecured(Map<String, dynamic> json) async {
-    return _fromMap(json, json['profile'] == null ? null : await TwitterProfileEntity.fromMapSecured(json['profile'] as Map<String, dynamic>, '$oauthConsumerSecret&${json['oauth_token']}.${json['oauth_token_secret']}'));
+    return _fromMap(
+      json,
+      json['profile'] == null
+          ? null
+          : await TwitterProfileEntity.fromMapSecured(
+              json['profile'] as Map<String, dynamic>,
+              '$oauthConsumerSecret&${json['oauth_token']}.${json['oauth_token_secret']}',
+            ),
+    );
   }
 
   static TwitterTokenEntity _fromMap(Map<String, dynamic> json, TwitterProfileEntity? pProfile) {
@@ -247,8 +300,10 @@ class TwitterTokenEntity with ToMappable {
       screenName: json['screen_name'] == null ? getRandomString(15) : json['screen_name'] as String,
       oauthToken: json['oauth_token'] == null ? '' : json['oauth_token'] as String,
       oauthTokenSecret: json['oauth_token_secret'] == null ? '' : json['oauth_token_secret'] as String,
-      createdAt: json['created_at'] == null || json['created_at'] == '' ? DateTime.now() : DateTime.parse(json['created_at'] as String),
-      profile: pProfile
+      createdAt: json['created_at'] == null || json['created_at'] == ''
+          ? DateTime.now()
+          : convertTwitterDateTime(json['created_at'] as String)!,
+      profile: pProfile,
     );
   }
 
@@ -269,10 +324,9 @@ class TwitterTokenEntity with ToMappable {
       'oauth_token': oauthToken,
       'oauth_token_secret': oauthTokenSecret,
       'created_at': createdAt.toIso8601String(),
-      'profile': pProfile
+      'profile': pProfile,
     };
   }
-
 }
 
 class TwitterTokenEntityWrapperDb with ToMappable {
@@ -289,7 +343,6 @@ class TwitterTokenEntityWrapperDb with ToMappable {
 }
 
 class TwitterProfileEntity with ToMappable {
-
   final String username;
   String password;
   DateTime createdAt;
@@ -297,7 +350,14 @@ class TwitterProfileEntity with ToMappable {
   String? email;
   String? phone;
 
-  TwitterProfileEntity({required this.username, required this.password, required this.createdAt, this.name, this.email, this.phone});
+  TwitterProfileEntity({
+    required this.username,
+    required this.password,
+    required this.createdAt,
+    this.name,
+    this.email,
+    this.phone,
+  });
 
   static TwitterProfileEntity fromMap(Map<String, dynamic> json) {
     return _fromMap(json, json['password'] == null ? '' : json['password'] as String);
@@ -311,10 +371,12 @@ class TwitterProfileEntity with ToMappable {
     return TwitterProfileEntity(
       username: json['username'] == null ? '' : json['username'] as String,
       password: pPassword,
-      createdAt: json['created_at'] == null || json['created_at'] == '' ? DateTime.now() : DateTime.parse(json['created_at'] as String),
+      createdAt: json['created_at'] == null || json['created_at'] == ''
+          ? DateTime.now()
+          : convertTwitterDateTime(json['created_at'] as String)!,
       name: json['name'] as String?,
       email: json['email'] as String?,
-      phone: json['phone']  as String?
+      phone: json['phone'] as String?,
     );
   }
 
@@ -334,7 +396,7 @@ class TwitterProfileEntity with ToMappable {
       'created_at': createdAt.toIso8601String(),
       'name': name,
       'email': email,
-      'phone': phone
+      'phone': phone,
     };
   }
 }

@@ -71,6 +71,8 @@ const routeSettingsExport = '/settings/export';
 const routeSettingsHome = '/settings/home';
 const routeStatus = '/status';
 const routeSubscriptionsImport = '/subscriptions/import';
+const routeLiveEvent = '/live_event';
+const routeBroadcast = '/broadcast';
 
 const twitterAccountTypesPriorityToRegular = 'twitter_account_types_priority_to_regular';
 const twitterAccountTypesBoth = 'twitter_account_types_both';

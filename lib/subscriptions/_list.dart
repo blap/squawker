@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_triple/flutter_triple.dart';
-import 'package:flutter/material.dart';
 import 'package:pref/pref.dart';
 import 'package:squawker/constants.dart';
 import 'package:squawker/database/entities.dart';
@@ -13,7 +12,7 @@ import 'package:provider/provider.dart';
 import 'package:squawker/generated/l10n.dart';
 
 class SubscriptionUsers extends StatefulWidget {
-  const SubscriptionUsers({Key? key}) : super(key: key);
+  const SubscriptionUsers({super.key});
 
   @override
   State<SubscriptionUsers> createState() => _SubscriptionUsersState();

@@ -5,7 +5,6 @@ import 'package:async_button_builder/async_button_builder.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
-import 'package:flutter/material.dart';
 import 'package:squawker/client/client.dart';
 import 'package:squawker/constants.dart';
 import 'package:squawker/generated/l10n.dart';
@@ -18,11 +17,7 @@ Future<void> showAlertDialog(BuildContext context, String title, String message)
     builder: (BuildContext context) {
       return AlertDialog(
         title: Text(title),
-        content: SingleChildScrollView(
-          child: ListBody(
-            children: msgLst,
-          ),
-        ),
+        content: SingleChildScrollView(child: ListBody(children: msgLst)),
         actions: <Widget>[
           TextButton(
             child: Text(L10n.current.ok),
@@ -41,19 +36,21 @@ void showSnackBar(BuildContext context, {required String icon, required String m
     ScaffoldMessenger.of(context).clearSnackBars();
   }
 
-  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-    content: Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Flexible(child: Text(message, style: const TextStyle(height: 1.5))),
-        Text(icon),
-      ],
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(
+      content: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Flexible(child: Text(message, style: const TextStyle(height: 1.5))),
+          Text(icon),
+        ],
+      ),
     ),
-  ));
+  );
 }
 
 abstract class FritterErrorWidget extends StatelessWidget {
-  const FritterErrorWidget({Key? key}) : super(key: key);
+  const FritterErrorWidget({super.key});
 }
 
 class UnknownTwitterErrorCode implements Exception {
@@ -112,20 +109,18 @@ class EmojiErrorWidget extends FritterErrorWidget {
   final String message;
   final String errorMessage;
   final Function? onRetry;
-  String retryText = '';
+  final String retryText;
   final bool showBackButton;
 
-  EmojiErrorWidget(
-      {Key? key,
-      required this.emoji,
-      required this.message,
-      required this.errorMessage,
-      this.onRetry,
-      String? retryText,
-      this.showBackButton = true})
-      : super(key: key) {
-    this.retryText = retryText ?? L10n.current.retry;
-  }
+  EmojiErrorWidget({
+    super.key,
+    required this.emoji,
+    required this.message,
+    required this.errorMessage,
+    this.onRetry,
+    String? retryText,
+    this.showBackButton = true,
+  }) : retryText = retryText ?? L10n.current.retry;
 
   @override
   Widget build(BuildContext context) {
@@ -143,48 +138,52 @@ class EmojiErrorWidget extends FritterErrorWidget {
           Text(message, textAlign: TextAlign.center, style: const TextStyle(fontSize: 18)),
           Container(
             margin: const EdgeInsets.only(top: 12),
-            child: Text(errorMessage, textAlign: TextAlign.center, style: TextStyle(color: Theme.of(context).hintColor)),
+            child: Text(
+              errorMessage,
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Theme.of(context).hintColor),
+            ),
           ),
-          Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-            if (showBackButton)
-              Container(
-                margin: const EdgeInsets.only(top: 12),
-                child: ElevatedButton(
-                  child: Text(L10n.of(context).back),
-                  onPressed: () {
-                    // Check if we can actually pop the last route, as we might have opened here directly from another app
-                    if (Navigator.canPop(context)) {
-                      Navigator.pop(context);
-                      return;
-                    }
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              if (showBackButton)
+                Container(
+                  margin: const EdgeInsets.only(top: 12),
+                  child: ElevatedButton(
+                    child: Text(L10n.of(context).back),
+                    onPressed: () {
+                      // Check if we can actually pop the last route, as we might have opened here directly from another app
+                      if (Navigator.canPop(context)) {
+                        Navigator.pop(context);
+                        return;
+                      }
 
-                    // If we're running on Android, close the app gracefully. Otherwise, return to the home screen
-                    if (Platform.isAndroid) {
-                      SystemNavigator.pop();
-                    } else {
-                      Navigator.pushReplacementNamed(context, routeHome);
-                    }
-                  },
+                      // If we're running on Android, close the app gracefully. Otherwise, return to the home screen
+                      if (Platform.isAndroid) {
+                        SystemNavigator.pop();
+                      } else {
+                        Navigator.pushReplacementNamed(context, routeHome);
+                      }
+                    },
+                  ),
                 ),
-              ),
-            if (onRetry != null) const SizedBox(width: 16),
-            if (onRetry != null)
-              Container(
-                margin: const EdgeInsets.only(top: 12),
-                child: AsyncButtonBuilder(
-                  showError: false,
-                  showSuccess: false,
-                  builder: (context, child, callback, buttonState) {
-                    return ElevatedButton(
-                      onPressed: callback,
-                      child: child,
-                    );
-                  },
-                  child: Text(retryText),
-                  onPressed: () => onRetry(),
+              if (onRetry != null) const SizedBox(width: 16),
+              if (onRetry != null)
+                Container(
+                  margin: const EdgeInsets.only(top: 12),
+                  child: AsyncButtonBuilder(
+                    showError: false,
+                    showSuccess: false,
+                    builder: (context, child, callback, buttonState) {
+                      return ElevatedButton(onPressed: callback, child: child);
+                    },
+                    child: Text(retryText),
+                    onPressed: () => onRetry(),
+                  ),
                 ),
-              )
-          ])
+            ],
+          ),
         ],
       ),
     );
@@ -194,7 +193,7 @@ class EmojiErrorWidget extends FritterErrorWidget {
 class InlineErrorWidget extends FritterErrorWidget {
   final Object? error;
 
-  const InlineErrorWidget({Key? key, required this.error}) : super(key: key);
+  const InlineErrorWidget({super.key, required this.error});
 
   @override
   Widget build(BuildContext context) {
@@ -207,7 +206,11 @@ class InlineErrorWidget extends FritterErrorWidget {
             margin: const EdgeInsets.only(right: 8),
             child: const Icon(Icons.error_rounded, color: Colors.red),
           ),
-          Text('$error', textAlign: TextAlign.center, style: TextStyle(color: Theme.of(context).hintColor)),
+          Text(
+            '$error',
+            textAlign: TextAlign.center,
+            style: TextStyle(color: Theme.of(context).hintColor),
+          ),
         ],
       ),
     );
@@ -219,8 +222,7 @@ class AlertErrorWidget extends FritterErrorWidget {
   final StackTrace? stackTrace;
   final String prefix;
 
-  const AlertErrorWidget({Key? key, required this.error, required this.stackTrace, required this.prefix})
-      : super(key: key);
+  const AlertErrorWidget({super.key, required this.error, required this.stackTrace, required this.prefix});
 
   @override
   Widget build(BuildContext context) {
@@ -237,16 +239,26 @@ class ScaffoldErrorWidget extends FritterErrorWidget {
   final Function? onRetry;
   final String? retryText;
 
-  const ScaffoldErrorWidget(
-      {Key? key, required this.error, required this.stackTrace, required this.prefix, this.onRetry, this.retryText})
-      : super(key: key);
+  const ScaffoldErrorWidget({
+    super.key,
+    required this.error,
+    required this.stackTrace,
+    required this.prefix,
+    this.onRetry,
+    this.retryText,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(),
       body: FullPageErrorWidget(
-          error: error, prefix: prefix, stackTrace: stackTrace, onRetry: onRetry, retryText: retryText),
+        error: error,
+        prefix: prefix,
+        stackTrace: stackTrace,
+        onRetry: onRetry,
+        retryText: retryText,
+      ),
     );
   }
 }
@@ -258,9 +270,14 @@ class FullPageErrorWidget extends FritterErrorWidget {
   final Function? onRetry;
   final String? retryText;
 
-  const FullPageErrorWidget(
-      {Key? key, required this.error, required this.stackTrace, required this.prefix, this.onRetry, this.retryText})
-      : super(key: key);
+  const FullPageErrorWidget({
+    super.key,
+    required this.error,
+    required this.stackTrace,
+    required this.prefix,
+    this.onRetry,
+    this.retryText,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -292,11 +309,9 @@ class FullPageErrorWidget extends FritterErrorWidget {
     String errorStr;
     if (error is http.Response) {
       errorStr = error.body;
-    }
-    else if (error is Exception) {
+    } else if (error is Exception) {
       errorStr = error.toString();
-    }
-    else {
+    } else {
       errorStr = 'Error of type ${error.runtimeType.toString()}';
     }
 
@@ -318,21 +333,26 @@ class FullPageErrorWidget extends FritterErrorWidget {
             ),
             Container(
               margin: const EdgeInsets.only(top: 12),
-              child: Text(prefix, textAlign: TextAlign.center, style: TextStyle(color: Theme.of(context).hintColor)),
+              child: Text(
+                prefix,
+                textAlign: TextAlign.center,
+                style: TextStyle(color: Theme.of(context).hintColor),
+              ),
             ),
             Container(
               alignment: Alignment.center,
               margin: const EdgeInsets.only(top: 12),
-              child: Text(errorStr, textAlign: TextAlign.left, style: TextStyle(color: Theme.of(context).hintColor)),
+              child: Text(
+                errorStr,
+                textAlign: TextAlign.left,
+                style: TextStyle(color: Theme.of(context).hintColor),
+              ),
             ),
             if (onRetry != null)
               Container(
                 margin: const EdgeInsets.only(top: 12),
-                child: ElevatedButton(
-                  child: Text(retryText ?? L10n.of(context).retry),
-                  onPressed: () => onRetry(),
-                ),
-              )
+                child: ElevatedButton(child: Text(retryText ?? L10n.of(context).retry), onPressed: () => onRetry()),
+              ),
           ],
         ),
       ),

@@ -12,7 +12,7 @@ import 'package:squawker/generated/l10n.dart';
 import 'package:squawker/utils/iterables.dart';
 
 class TrendsSettings extends StatefulWidget {
-  const TrendsSettings({Key? key}) : super(key: key);
+  const TrendsSettings({super.key});
 
   @override
   State<TrendsSettings> createState() => _TrendsSettingsState();
@@ -32,7 +32,7 @@ class _TrendsSettingsState extends State<TrendsSettings> {
     var model = context.read<TrendLocationsModel>();
 
     return Padding(
-      padding: EdgeInsets.all(8.0),
+      padding: const EdgeInsets.all(8.0),
       child: ScopedBuilder<TrendLocationsModel, List<TrendLocation>>.transition(
         store: model,
         onError: (_, e) => FullPageErrorWidget(
@@ -53,16 +53,19 @@ class _TrendsSettingsState extends State<TrendsSettings> {
             var subtitle = item.parentid == 1 ? Text(L10n.of(context).country) : null;
 
             return ListTile(
-                title: Text(item.name!),
-                subtitle: subtitle,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.0)),
-                selectedTileColor: Theme.of(context).colorScheme.primary,
-                selectedColor: Theme.of(context).colorScheme.onPrimary,
-                selected: place.woeid == item.woeid,
-                onTap: () async {
-                  await context.read<UserTrendLocationModel>().set(item);
+              title: Text(item.name!),
+              subtitle: subtitle,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.0)),
+              selectedTileColor: Theme.of(context).colorScheme.primary,
+              selectedColor: Theme.of(context).colorScheme.onPrimary,
+              selected: place.woeid == item.woeid,
+              onTap: () async {
+                await context.read<UserTrendLocationModel>().set(item);
+                if (context.mounted) {
                   Navigator.pop(context);
-                });
+                }
+              },
+            );
           }
 
           return SizedBox(

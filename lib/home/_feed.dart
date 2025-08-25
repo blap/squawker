@@ -10,7 +10,7 @@ class FeedScreen extends StatefulWidget {
   final String id;
   final String name;
 
-  const FeedScreen({Key? key, required this.scrollController, required this.id, required this.name}) : super(key: key);
+  const FeedScreen({super.key, required this.scrollController, required this.id, required this.name});
 
   @override
   State<FeedScreen> createState() => FeedScreenState();

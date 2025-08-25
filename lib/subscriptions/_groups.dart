@@ -1,12 +1,8 @@
-import 'dart:convert';
-
 import 'package:dotted_border/dotted_border.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
-import 'package:flutter_iconpicker/flutter_iconpicker.dart';
 import 'package:flutter_triple/flutter_triple.dart';
-import 'package:flutter/material.dart';
 import 'package:squawker/constants.dart';
 import 'package:squawker/database/entities.dart';
 import 'package:squawker/generated/l10n.dart';
@@ -18,18 +14,25 @@ import 'package:squawker/utils/ui_util.dart';
 import 'package:squawker/utils/route_util.dart';
 import 'package:provider/provider.dart';
 
-Future openSubscriptionGroupDialog(BuildContext context, String? id, String name, String icon, {Set<String>? preMembers}) {
+Future openSubscriptionGroupDialog(
+  BuildContext context,
+  String? id,
+  String name,
+  String icon, {
+  Set<String>? preMembers,
+}) {
   return showDialog(
-      context: context,
-      builder: (context) {
-        return SubscriptionGroupEditDialog(id: id, name: name, icon: icon, preMembers: preMembers);
-      });
+    context: context,
+    builder: (context) {
+      return SubscriptionGroupEditDialog(id: id, name: name, icon: icon, preMembers: preMembers);
+    },
+  );
 }
 
 class SubscriptionGroups extends StatefulWidget {
   final ScrollController scrollController;
 
-  const SubscriptionGroups({Key? key, required this.scrollController}) : super(key: key);
+  const SubscriptionGroups({super.key, required this.scrollController});
 
   @override
   State<SubscriptionGroups> createState() => _SubscriptionGroupsState();
@@ -37,7 +40,13 @@ class SubscriptionGroups extends StatefulWidget {
 
 class _SubscriptionGroupsState extends State<SubscriptionGroups> {
   Widget _createGroupCard(
-      String id, String name, String icon, Color? color, int? numberOfMembers, void Function()? onLongPress) {
+    String id,
+    String name,
+    String icon,
+    Color? color,
+    int? numberOfMembers,
+    void Function()? onLongPress,
+  ) {
     var title = numberOfMembers == null ? name : '$name ($numberOfMembers)';
 
     return Card(
@@ -50,23 +59,26 @@ class _SubscriptionGroupsState extends State<SubscriptionGroups> {
         child: Column(
           children: [
             Container(
-              color: color != null ? color.withOpacity(0.9) : Theme.of(context).highlightColor,
+              color: color != null ? color.withValues(alpha: 0.9) : Theme.of(context).highlightColor,
               width: double.infinity,
               padding: const EdgeInsets.symmetric(vertical: 12),
               child: Icon(deserializeIconData(icon), size: 24),
             ),
             Expanded(
-                child: Container(
-              alignment: Alignment.center,
-              color: color != null ? color.withOpacity(0.4) : Colors.white10,
-              width: double.infinity,
-              padding: const EdgeInsets.all(8),
-              child: Text(title,
+              child: Container(
+                alignment: Alignment.center,
+                color: color != null ? color.withValues(alpha: 0.4) : Colors.white10,
+                width: double.infinity,
+                padding: const EdgeInsets.all(8),
+                child: Text(
+                  title,
                   textAlign: TextAlign.center,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
-            ))
+                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                ),
+              ),
+            ),
           ],
         ),
       ),
@@ -77,13 +89,16 @@ class _SubscriptionGroupsState extends State<SubscriptionGroups> {
   Widget build(BuildContext context) {
     return ScopedBuilder<GroupsModel, List<SubscriptionGroup>>.transition(
       store: context.read<GroupsModel>(),
-      // TODO: Error
+      // FIXED: Error handling now displays localized error message to the user
+      onError: (_, error) => Center(child: Text('${L10n.of(context).unable_to_load_subscription_groups}: $error')),
       onState: (_, state) {
         return GridView.builder(
           controller: widget.scrollController,
           padding: const EdgeInsets.only(top: 4),
-          gridDelegate:
-              const SliverGridDelegateWithMaxCrossAxisExtent(maxCrossAxisExtent: 180, childAspectRatio: 200 / 150),
+          gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+            maxCrossAxisExtent: 180,
+            childAspectRatio: 200 / 150,
+          ),
           itemCount: state.length + 2,
           itemBuilder: (context, index) {
             var actualIndex = index - 1;
@@ -94,8 +109,14 @@ class _SubscriptionGroupsState extends State<SubscriptionGroups> {
             if (actualIndex < state.length) {
               var e = state[actualIndex];
 
-              return _createGroupCard(e.id, e.name, e.icon, e.color, e.numberOfMembers,
-                  () => openSubscriptionGroupDialog(context, e.id, e.name, e.icon));
+              return _createGroupCard(
+                e.id,
+                e.name,
+                e.icon,
+                e.color,
+                e.numberOfMembers,
+                () => openSubscriptionGroupDialog(context, e.id, e.name, e.icon),
+              );
             }
 
             return Card(
@@ -104,9 +125,11 @@ class _SubscriptionGroupsState extends State<SubscriptionGroups> {
                   openSubscriptionGroupDialog(context, null, '', defaultGroupIcon);
                 },
                 child: DottedBorder(
-                  color: Theme.of(context).textTheme.bodySmall!.color!,
-                  borderType: BorderType.RRect,
-                  radius: const Radius.circular(12),
+                  options: RoundedRectDottedBorderOptions(
+                    color: Theme.of(context).textTheme.bodySmall!.color!,
+                    strokeWidth: 1,
+                    radius: const Radius.circular(12),
+                  ),
                   child: SizedBox(
                     width: double.infinity,
                     child: Column(
@@ -114,10 +137,7 @@ class _SubscriptionGroupsState extends State<SubscriptionGroups> {
                       children: [
                         const Icon(Icons.add_rounded, size: 16),
                         const SizedBox(height: 4),
-                        Text(
-                          L10n.of(context).newTrans,
-                          style: const TextStyle(fontSize: 13),
-                        )
+                        Text(L10n.of(context).newTrans, style: const TextStyle(fontSize: 13)),
                       ],
                     ),
                   ),
@@ -135,10 +155,15 @@ class SubscriptionGroupEditDialog extends StatefulWidget {
   final String? id;
   final String name;
   final String icon;
-  Set<String>? preMembers;
+  final Set<String>? preMembers;
 
-  SubscriptionGroupEditDialog({Key? key, required this.id, required this.name, required this.icon, this.preMembers})
-      : super(key: key);
+  const SubscriptionGroupEditDialog({
+    super.key,
+    required this.id,
+    required this.name,
+    required this.icon,
+    this.preMembers,
+  });
 
   @override
   State<SubscriptionGroupEditDialog> createState() => _SubscriptionGroupEditDialogState();
@@ -166,7 +191,9 @@ class _SubscriptionGroupEditDialogState extends State<SubscriptionGroupEditDialo
       icon = widget.icon;
     });
 
-    context.read<GroupsModel>().loadGroupEdit(widget.id, preMembers: widget.preMembers).then((group) => setState(() {
+    context.read<GroupsModel>().loadGroupEdit(widget.id, preMembers: widget.preMembers).then((group) {
+      if (mounted) {
+        setState(() {
           _group = group;
 
           id = group.id;
@@ -174,35 +201,35 @@ class _SubscriptionGroupEditDialogState extends State<SubscriptionGroupEditDialo
           icon = group.icon;
           color = group.color;
           members = group.members;
-        }));
+        });
+      }
+    });
   }
 
   void openDeleteSubscriptionGroupDialog(String id, String name) {
     showDialog(
-        context: context,
-        builder: (context) {
-          return AlertDialog(
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: Text(L10n.of(context).no),
-              ),
-              TextButton(
-                onPressed: () async {
-                  await context.read<GroupsModel>().deleteGroup(id);
-
-                  Navigator.pop(context);
-                  Navigator.pop(context);
-                },
-                child: Text(L10n.of(context).yes),
-              ),
-            ],
-            title: Text(L10n.of(context).are_you_sure),
-            content: Text(
-              L10n.of(context).are_you_sure_you_want_to_delete_the_subscription_group_name_of_group(name),
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(context), child: Text(L10n.of(context).no)),
+            TextButton(
+              onPressed: () async {
+                await context.read<GroupsModel>().deleteGroup(id);
+                // Add proper mounted checks for both context and State
+                if (!context.mounted || !mounted) return;
+                Navigator.pop(context);
+                if (!context.mounted) return;
+                Navigator.pop(context);
+              },
+              child: Text(L10n.of(context).yes),
             ),
-          );
-        });
+          ],
+          title: Text(L10n.of(context).are_you_sure),
+          content: Text(L10n.of(context).are_you_sure_you_want_to_delete_the_subscription_group_name_of_group(name)),
+        );
+      },
+    );
   }
 
   @override
@@ -233,67 +260,63 @@ class _SubscriptionGroupEditDialogState extends State<SubscriptionGroupEditDialo
       ),
     ];
     List<Widget> buttonsLst2 = [
-      TextButton(
-        onPressed: () => Navigator.pop(context),
-        child: Text(L10n.of(context).cancel),
-      ),
-      Builder(builder: (context) {
-        onPressed() async {
-          if (_formKey.currentState!.validate()) {
-            await context.read<GroupsModel>().saveGroup(id, name!, icon, color, members);
-
-            Navigator.pop(context);
+      TextButton(onPressed: () => Navigator.pop(context), child: Text(L10n.of(context).cancel)),
+      Builder(
+        builder: (context) {
+          onPressed() async {
+            if (_formKey.currentState!.validate()) {
+              await context.read<GroupsModel>().saveGroup(id, name!, icon, color, members);
+              // Add proper mounted checks for both context and State
+              if (!context.mounted || !mounted) return;
+              Navigator.pop(context);
+            }
           }
-        }
 
-        return TextButton(
-          onPressed: onPressed,
-          child: Text(L10n.of(context).ok),
-        );
-      }),
+          return TextButton(onPressed: onPressed, child: Text(L10n.of(context).ok));
+        },
+      ),
     ];
     double screenWidth = MediaQuery.of(context).size.width;
-    double allTextsWidth = calcTextSize(context,
-            '   ${L10n.of(context).toggle_all}   ${L10n.of(context).delete}   ${L10n.of(context).cancel}  ${L10n.of(context).ok}   ')
-        .width;
-    double halfTextsWidth1 =
-        calcTextSize(context, '   ${L10n.of(context).toggle_all}   ${L10n.of(context).delete}   ').width;
+    double allTextsWidth = calcTextSize(
+      context,
+      '   ${L10n.of(context).toggle_all}   ${L10n.of(context).delete}   ${L10n.of(context).cancel}  ${L10n.of(context).ok}   ',
+    ).width;
+    double halfTextsWidth1 = calcTextSize(
+      context,
+      '   ${L10n.of(context).toggle_all}   ${L10n.of(context).delete}   ',
+    ).width;
     double halfTextsWidth2 = calcTextSize(context, '   ${L10n.of(context).cancel}   ${L10n.of(context).ok}   ').width;
     double halfTextsWidth = halfTextsWidth1 > halfTextsWidth2 ? halfTextsWidth1 : halfTextsWidth2;
     if (kDebugMode) {
       print(
-          '*** _SubscriptionGroupEditDialogState - screenWidth = $screenWidth, allTextsWidth = $allTextsWidth, halfTextsWidth = $halfTextsWidth');
+        '*** _SubscriptionGroupEditDialogState - screenWidth = $screenWidth, allTextsWidth = $allTextsWidth, halfTextsWidth = $halfTextsWidth',
+      );
     }
 
     return AlertDialog(
       actionsPadding: EdgeInsets.symmetric(
-          horizontal: 0,
-          vertical: screenWidth >= breakpointScreenWidth2 && allTextsWidth < breakpointTextWidth
-              ? 20
-              : screenWidth >= breakpointScreenWidth1 && halfTextsWidth < breakpointTextWidth
-                  ? 10
-                  : 5),
+        horizontal: 0,
+        vertical: screenWidth >= breakpointScreenWidth2 && allTextsWidth < breakpointTextWidth
+            ? 20
+            : screenWidth >= breakpointScreenWidth1 && halfTextsWidth < breakpointTextWidth
+            ? 10
+            : 5,
+      ),
       actions: [
         SizedBox(
-            width: screenWidth,
-            child: screenWidth >= breakpointScreenWidth2 && allTextsWidth < breakpointTextWidth
-                ? Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                    ...buttonsLst1,
-                    ...buttonsLst2,
-                  ])
-                : screenWidth >= breakpointScreenWidth1 && halfTextsWidth < breakpointTextWidth
-                    ? Column(mainAxisSize: MainAxisSize.min, children: [
-                        Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                          ...buttonsLst1,
-                        ]),
-                        Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                          ...buttonsLst2,
-                        ]),
-                      ])
-                    : Column(mainAxisSize: MainAxisSize.min, children: [
-                        ...buttonsLst1,
-                        ...buttonsLst2,
-                      ])),
+          width: screenWidth,
+          child: screenWidth >= breakpointScreenWidth2 && allTextsWidth < breakpointTextWidth
+              ? Row(mainAxisAlignment: MainAxisAlignment.center, children: [...buttonsLst1, ...buttonsLst2])
+              : screenWidth >= breakpointScreenWidth1 && halfTextsWidth < breakpointTextWidth
+              ? Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Row(mainAxisAlignment: MainAxisAlignment.center, children: [...buttonsLst1]),
+                    Row(mainAxisAlignment: MainAxisAlignment.center, children: [...buttonsLst2]),
+                  ],
+                )
+              : Column(mainAxisSize: MainAxisSize.min, children: [...buttonsLst1, ...buttonsLst2]),
+        ),
       ],
       content: Form(
         key: _formKey,
@@ -328,40 +351,41 @@ class _SubscriptionGroupEditDialogState extends State<SubscriptionGroupEditDialo
                     icon: Icon(Icons.palette_rounded, color: color),
                     onPressed: () {
                       showDialog(
-                          context: context,
-                          builder: (context) {
-                            var selectedColor = color;
+                        context: context,
+                        builder: (context) {
+                          var selectedColor = color;
 
-                            return AlertDialog(
-                              title: Text(L10n.of(context).pick_a_color),
-                              content: SingleChildScrollView(
-                                child: MaterialPicker(
-                                  pickerColor: color ?? Colors.grey,
-                                  onColorChanged: (value) => setState(() {
-                                    selectedColor = value;
-                                  }),
-                                  enableLabel: true,
-                                ),
+                          return AlertDialog(
+                            title: Text(L10n.of(context).pick_a_color),
+                            content: SingleChildScrollView(
+                              child: MaterialPicker(
+                                pickerColor: color ?? Colors.grey,
+                                onColorChanged: (value) => setState(() {
+                                  selectedColor = value;
+                                }),
+                                enableLabel: true,
                               ),
-                              actions: <Widget>[
-                                TextButton(
-                                  child: Text(L10n.of(context).cancel),
-                                  onPressed: () {
-                                    Navigator.of(context).pop();
-                                  },
-                                ),
-                                TextButton(
-                                  child: Text(L10n.of(context).ok),
-                                  onPressed: () {
-                                    setState(() {
-                                      color = selectedColor;
-                                    });
-                                    Navigator.of(context).pop();
-                                  },
-                                ),
-                              ],
-                            );
-                          });
+                            ),
+                            actions: <Widget>[
+                              TextButton(
+                                child: Text(L10n.of(context).cancel),
+                                onPressed: () {
+                                  Navigator.of(context).pop();
+                                },
+                              ),
+                              TextButton(
+                                child: Text(L10n.of(context).ok),
+                                onPressed: () {
+                                  setState(() {
+                                    color = selectedColor;
+                                  });
+                                  Navigator.of(context).pop();
+                                },
+                              ),
+                            ],
+                          );
+                        },
+                      );
                     },
                   ),
                   /*
@@ -394,8 +418,9 @@ class _SubscriptionGroupEditDialogState extends State<SubscriptionGroupEditDialo
                   itemBuilder: (context, index) {
                     var subscription = subscriptionsModel.state[index];
 
-                    var subtitle =
-                        subscription is SearchSubscription ? L10n.current.search_term : '@${subscription.screenName}';
+                    var subtitle = subscription is SearchSubscription
+                        ? L10n.current.search_term
+                        : '@${subscription.screenName}';
 
                     var icon = subscription is SearchSubscription
                         ? const SizedBox(width: 48, child: Icon(Icons.search_rounded))

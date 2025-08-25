@@ -11,7 +11,6 @@ import 'package:chewie/src/models/option_item.dart';
 import 'package:chewie/src/models/subtitle_model.dart';
 import 'package:chewie/src/notifiers/index.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:video_player/video_player.dart';
 
@@ -20,10 +19,7 @@ import 'package:squawker/generated/l10n.dart';
 // This class is mostly taken directly from Chewie, which is released under the MIT License
 // https://github.com/fluttercommunity/chewie/blob/0d997f8ded29ae2151a6935668d8654a6deb8fa6/lib/src/material/material_controls.dart
 class FritterMaterialControls extends StatefulWidget {
-  const FritterMaterialControls({
-    this.showPlayButton = true,
-    Key? key,
-  }) : super(key: key);
+  const FritterMaterialControls({this.showPlayButton = true, super.key});
 
   final bool showPlayButton;
 
@@ -69,13 +65,7 @@ class _MaterialControlsState extends State<FritterMaterialControls> with SingleT
             context,
             chewieController.videoPlayerController.value.errorDescription!,
           ) ??
-          const Center(
-            child: Icon(
-              Icons.error_rounded,
-              color: Colors.white,
-              size: 42,
-            ),
-          );
+          const Center(child: Icon(Icons.error_rounded, color: Colors.white, size: 42));
     }
 
     return MouseRegion(
@@ -88,22 +78,14 @@ class _MaterialControlsState extends State<FritterMaterialControls> with SingleT
           absorbing: notifier.hideStuff,
           child: Stack(
             children: [
-              if (_displayBufferingIndicator)
-                const Center(
-                  child: CircularProgressIndicator(),
-                )
-              else
-                _buildHitArea(),
+              if (_displayBufferingIndicator) const Center(child: CircularProgressIndicator()) else _buildHitArea(),
               _buildActionBar(),
               Column(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: <Widget>[
                   if (_subtitleOn)
                     Transform.translate(
-                      offset: Offset(
-                        0.0,
-                        notifier.hideStuff ? barHeight * 0.8 : 0.0,
-                      ),
+                      offset: Offset(0.0, notifier.hideStuff ? barHeight * 0.8 : 0.0),
                       child: _buildSubtitles(context, chewieController.subtitle!),
                     ),
                   _buildBottomBar(context),
@@ -151,12 +133,7 @@ class _MaterialControlsState extends State<FritterMaterialControls> with SingleT
       child: AnimatedOpacity(
         opacity: notifier.hideStuff ? 0.0 : 1.0,
         duration: const Duration(milliseconds: 250),
-        child: Row(
-          children: [
-            _buildSubtitleToggle(),
-            if (chewieController.showOptions) _buildOptionsButton(),
-          ],
-        ),
+        child: Row(children: [_buildSubtitleToggle(), if (chewieController.showOptions) _buildOptionsButton()]),
       ),
     );
   }
@@ -164,13 +141,13 @@ class _MaterialControlsState extends State<FritterMaterialControls> with SingleT
   Widget _buildOptionsButton() {
     final options = <OptionItem>[
       OptionItem(
-        onTap: () async {
+        onTap: (context) {
           Navigator.pop(context);
           _onSpeedButtonTap();
         },
         iconData: Icons.speed_rounded,
         title: L10n.of(context).playback_speed,
-      )
+      ),
     ];
 
     if (chewieController.additionalOptions != null && chewieController.additionalOptions!(context).isNotEmpty) {
@@ -191,10 +168,7 @@ class _MaterialControlsState extends State<FritterMaterialControls> with SingleT
               context: context,
               isScrollControlled: true,
               useRootNavigator: chewieController.useRootNavigator,
-              builder: (context) => OptionsDialog(
-                options: options,
-                cancelButtonText: L10n.of(context).cancel,
-              ),
+              builder: (context) => OptionsDialog(options: options, cancelButtonText: L10n.of(context).cancel),
             );
           }
 
@@ -202,10 +176,7 @@ class _MaterialControlsState extends State<FritterMaterialControls> with SingleT
             _startHideTimer();
           }
         },
-        icon: const Icon(
-          Icons.more_vert,
-          color: Colors.white,
-        ),
+        icon: const Icon(Icons.more_vert, color: Colors.white),
       ),
     );
   }
@@ -220,34 +191,24 @@ class _MaterialControlsState extends State<FritterMaterialControls> with SingleT
     }
 
     if (chewieController.subtitleBuilder != null) {
-      return chewieController.subtitleBuilder!(
-        context,
-        currentSubtitle.first!.text,
-      );
+      return chewieController.subtitleBuilder!(context, currentSubtitle.first!.text);
     }
 
     return Padding(
       padding: EdgeInsets.all(marginSize),
       child: Container(
         padding: const EdgeInsets.all(5),
-        decoration: BoxDecoration(
-          color: const Color(0x96000000),
-          borderRadius: BorderRadius.circular(10.0),
-        ),
+        decoration: BoxDecoration(color: const Color(0x96000000), borderRadius: BorderRadius.circular(10.0)),
         child: Text(
           currentSubtitle.first!.text.toString(),
-          style: const TextStyle(
-            fontSize: 18,
-          ),
+          style: const TextStyle(fontSize: 18),
           textAlign: TextAlign.center,
         ),
       ),
     );
   }
 
-  AnimatedOpacity _buildBottomBar(
-    BuildContext context,
-  ) {
+  AnimatedOpacity _buildBottomBar(BuildContext context) {
     final iconColor = Theme.of(context).textTheme.labelLarge!.color;
 
     return AnimatedOpacity(
@@ -255,10 +216,7 @@ class _MaterialControlsState extends State<FritterMaterialControls> with SingleT
       duration: const Duration(milliseconds: 300),
       child: Container(
         height: barHeight + (chewieController.isFullScreen ? 10.0 : 0),
-        padding: EdgeInsets.only(
-          left: 20,
-          bottom: !chewieController.isFullScreen ? 10.0 : 0,
-        ),
+        padding: EdgeInsets.only(left: 20, bottom: !chewieController.isFullScreen ? 10.0 : 0),
         // NOTE: Removed SafeArea so that controls don't disappear on smaller videos
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -278,18 +236,12 @@ class _MaterialControlsState extends State<FritterMaterialControls> with SingleT
                 ],
               ),
             ),
-            SizedBox(
-              height: chewieController.isFullScreen ? 15.0 : 0,
-            ),
+            SizedBox(height: chewieController.isFullScreen ? 15.0 : 0),
             if (!chewieController.isLive)
               Expanded(
                 child: Container(
                   padding: const EdgeInsets.only(right: 20),
-                  child: Row(
-                    children: [
-                      _buildProgressBar(),
-                    ],
-                  ),
+                  child: Row(children: [_buildProgressBar()]),
                 ),
               ),
           ],
@@ -298,9 +250,7 @@ class _MaterialControlsState extends State<FritterMaterialControls> with SingleT
     );
   }
 
-  GestureDetector _buildMuteButton(
-    VideoPlayerController controller,
-  ) {
+  GestureDetector _buildMuteButton(VideoPlayerController controller) {
     return GestureDetector(
       onTap: () {
         _cancelAndRestartTimer();
@@ -318,9 +268,7 @@ class _MaterialControlsState extends State<FritterMaterialControls> with SingleT
         child: ClipRect(
           child: Container(
             height: barHeight,
-            padding: const EdgeInsets.only(
-              left: 6.0,
-            ),
+            padding: const EdgeInsets.only(left: 6.0),
             child: Icon(
               _latestValue.volume > 0 ? Icons.volume_up_rounded : Icons.volume_off_rounded,
               color: Colors.white,
@@ -340,10 +288,7 @@ class _MaterialControlsState extends State<FritterMaterialControls> with SingleT
         child: Container(
           height: barHeight + (chewieController.isFullScreen ? 15.0 : 0),
           margin: const EdgeInsets.only(right: 12.0),
-          padding: const EdgeInsets.only(
-            left: 8.0,
-            right: 8.0,
-          ),
+          padding: const EdgeInsets.only(left: 8.0, right: 8.0),
           child: Center(
             child: Icon(
               chewieController.isFullScreen ? Icons.fullscreen_exit_rounded : Icons.fullscreen_rounded,
@@ -394,10 +339,8 @@ class _MaterialControlsState extends State<FritterMaterialControls> with SingleT
       context: context,
       isScrollControlled: true,
       useRootNavigator: chewieController.useRootNavigator,
-      builder: (context) => PlaybackSpeedDialog(
-        speeds: chewieController.playbackSpeeds,
-        selected: _latestValue.playbackSpeed,
-      ),
+      builder: (context) =>
+          PlaybackSpeedDialog(speeds: chewieController.playbackSpeeds, selected: _latestValue.playbackSpeed),
     );
 
     if (chosenSpeed != null) {
@@ -421,16 +364,12 @@ class _MaterialControlsState extends State<FritterMaterialControls> with SingleT
             text: '/ ${formatDuration(duration)}',
             style: TextStyle(
               fontSize: 14.0,
-              color: Colors.white.withOpacity(.75),
+              color: Colors.white.withValues(alpha: 0.75),
               fontWeight: FontWeight.normal,
             ),
-          )
+          ),
         ],
-        style: const TextStyle(
-          fontSize: 14.0,
-          color: Colors.white,
-          fontWeight: FontWeight.bold,
-        ),
+        style: const TextStyle(fontSize: 14.0, color: Colors.white, fontWeight: FontWeight.bold),
       ),
     );
   }
@@ -445,10 +384,7 @@ class _MaterialControlsState extends State<FritterMaterialControls> with SingleT
       child: Container(
         height: barHeight,
         color: Colors.transparent,
-        padding: const EdgeInsets.only(
-          left: 12.0,
-          right: 12.0,
-        ),
+        padding: const EdgeInsets.only(left: 12.0, right: 12.0),
         child: Icon(
           _subtitleOn ? Icons.closed_caption_rounded : Icons.closed_caption_disabled_rounded,
           color: _subtitleOn ? Colors.white : Colors.grey[700],
@@ -554,10 +490,7 @@ class _MaterialControlsState extends State<FritterMaterialControls> with SingleT
     // display the progress bar indicator only after the buffering delay if it has been set
     if (chewieController.progressIndicatorDelay != null) {
       if (controller.value.isBuffering) {
-        _bufferingDisplayTimer ??= Timer(
-          chewieController.progressIndicatorDelay!,
-          _bufferingTimerTimeout,
-        );
+        _bufferingDisplayTimer ??= Timer(chewieController.progressIndicatorDelay!, _bufferingTimerTimeout);
       } else {
         _bufferingDisplayTimer?.cancel();
         _bufferingDisplayTimer = null;
@@ -591,12 +524,13 @@ class _MaterialControlsState extends State<FritterMaterialControls> with SingleT
 
           _startHideTimer();
         },
-        colors: chewieController.materialProgressColors ??
+        colors:
+            chewieController.materialProgressColors ??
             ChewieProgressColors(
               playedColor: Theme.of(context).colorScheme.secondary,
               handleColor: Theme.of(context).colorScheme.secondary,
-              bufferedColor: Theme.of(context).colorScheme.background.withOpacity(0.5),
-              backgroundColor: Theme.of(context).disabledColor.withOpacity(.5),
+              bufferedColor: Theme.of(context).colorScheme.surface.withValues(alpha: 0.5),
+              backgroundColor: Theme.of(context).disabledColor.withValues(alpha: 0.5),
             ),
       ),
     );
@@ -605,14 +539,14 @@ class _MaterialControlsState extends State<FritterMaterialControls> with SingleT
 
 class FritterCenterPlayButton extends StatelessWidget {
   const FritterCenterPlayButton({
-    Key? key,
+    super.key,
     required this.backgroundColor,
     this.iconColor,
     required this.show,
     required this.isPlaying,
     required this.isFinished,
     this.onPressed,
-  }) : super(key: key);
+  });
 
   final Color backgroundColor;
   final Color? iconColor;
@@ -636,18 +570,12 @@ class FritterCenterPlayButton extends StatelessWidget {
               // NOTE: Added specific sizes here, otherwise it fills the container on Flutter >3.3.2
               width: 64,
               height: 64,
-              decoration: BoxDecoration(
-                color: backgroundColor,
-                shape: BoxShape.circle,
-              ),
+              decoration: BoxDecoration(color: backgroundColor, shape: BoxShape.circle),
               child: IconButton(
                 iconSize: 32,
                 icon: isFinished
                     ? Icon(Icons.replay_rounded, color: iconColor)
-                    : AnimatedPlayPause(
-                        color: iconColor,
-                        playing: isPlaying,
-                      ),
+                    : AnimatedPlayPause(color: iconColor, playing: isPlaying),
                 onPressed: onPressed,
               ),
             ),

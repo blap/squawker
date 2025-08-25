@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:squawker/client/client.dart';
 import 'package:squawker/tweet/tweet.dart';
-import 'package:squawker/utils/iterables.dart';
 
 class TweetConversation extends StatefulWidget {
   final String id;
@@ -12,8 +11,7 @@ class TweetConversation extends StatefulWidget {
   final VisiblePositionState? visiblePositionState;
 
   const TweetConversation(
-      {Key? key, required this.id, required this.username, required this.isPinned, required this.tweets, this.tweetIdxDic, this.visiblePositionState})
-      : super(key: key);
+      {super.key, required this.id, required this.username, required this.isPinned, required this.tweets, this.tweetIdxDic, this.visiblePositionState});
 
   @override
   State<TweetConversation> createState() => _TweetConversationState();

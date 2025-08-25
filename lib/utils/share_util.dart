@@ -7,7 +7,7 @@ import 'package:uuid/uuid.dart';
 // The following is a workaround because of an issue with the share_plus package which uses the faulty mime_type library.
 // When the issue is resolved (the PR https://github.com/dart-lang/mime/pull/81 is merged),
 // then it should be replaced by the original code:
-// Share.shareXFiles([XFile.fromData(fileBytes, mimeType: 'image/jpeg')]);
+// SharePlus.instance.share(ShareParams(files: [XFile.fromData(fileBytes, mimeType: 'image/jpeg')]));
 Future<void> shareJpegData(Uint8List data) async {
   const uuid = Uuid();
 
@@ -20,5 +20,5 @@ Future<void> shareJpegData(Uint8List data) async {
 
   final xFile = XFile(path, mimeType: 'image/jpeg');
 
-  Share.shareXFiles([xFile]).then((value) => file.delete());
+  SharePlus.instance.share(ShareParams(files: [xFile])).then((value) => file.delete());
 }

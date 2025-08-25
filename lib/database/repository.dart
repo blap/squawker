@@ -278,7 +278,7 @@ class Repository {
             var oauthToken = token['oauth_token'] as String;
             await db.delete(tableTwitterToken, where: 'screen_name = ? AND oauth_token != ?', whereArgs: [screenName, oauthToken]);
             var profiles = await db.query(tableTwitterProfile, where: 'lower(username) = lower(?)', whereArgs: [screenName]);
-            var password, name, email, phone;
+            Object? password, name, email, phone;
             for (var profile in profiles) {
               password ??= profile['password'];
               name ??= profile['name'];
@@ -324,9 +324,9 @@ class Repository {
     await openDatabase(
       databaseName,
       version: 30,
-      onUpgrade: myMigrationPlan,
-      onCreate: myMigrationPlan,
-      onDowngrade: myMigrationPlan,
+      onUpgrade: myMigrationPlan.call,
+      onCreate: myMigrationPlan.call,
+      onDowngrade: myMigrationPlan.call,
     );
 
     // Clean up any old feed chunks and cursors

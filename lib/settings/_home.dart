@@ -1,13 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_triple/flutter_triple.dart';
-import 'package:flutter/material.dart';
 import 'package:squawker/generated/l10n.dart';
 import 'package:squawker/home/home_model.dart';
 import 'package:squawker/ui/errors.dart';
 import 'package:provider/provider.dart';
 
 class SettingsHomeFragment extends StatelessWidget {
-  const SettingsHomeFragment({Key? key}) : super(key: key);
+  const SettingsHomeFragment({super.key});
 
   @override
   Widget build(BuildContext context) {

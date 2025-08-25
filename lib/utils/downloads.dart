@@ -13,8 +13,13 @@ import 'package:path/path.dart' as p;
 import 'package:permission_handler/permission_handler.dart';
 import 'package:pref/pref.dart';
 
-Future<void> downloadUriToPickedFile(BuildContext context, Uri uri, String fileName,
-    {required Function() onStart, required Function() onSuccess}) async {
+Future<void> downloadUriToPickedFile(
+  BuildContext context,
+  Uri uri,
+  String fileName, {
+  required Function() onStart,
+  required Function() onSuccess,
+}) async {
   var sanitizedFilename = fileName.split("?")[0];
 
   try {
@@ -23,20 +28,36 @@ Future<void> downloadUriToPickedFile(BuildContext context, Uri uri, String fileN
 
     DeviceInfoPlugin plugin = DeviceInfoPlugin();
     AndroidDeviceInfo android = await plugin.androidInfo;
-    var storagePermission = android.version.sdkInt < 30 ? await Permission.storage.request() : await Permission.manageExternalStorage.request();
+    var storagePermission = android.version.sdkInt < 30
+        ? await Permission.storage.request()
+        : await Permission.manageExternalStorage.request();
+
+    // Check if context is still mounted after async operations
+    if (!context.mounted) return;
 
     var response = await responseTask;
     if (response == null) {
       return;
     }
 
+    // Check if context is still mounted before accessing PrefService
+    if (!context.mounted) return;
+
     final downloadType = PrefService.of(context).get(optionDownloadType);
     final downloadPath = PrefService.of(context).get(optionDownloadPath);
 
     // If the user wants to pick a file every time a download happens
     if (downloadType == optionDownloadTypeAsk || downloadPath == '') {
-      var fileInfo =
-          await FlutterFileDialog.saveFile(params: SaveFileDialogParams(fileName: sanitizedFilename, data: response));
+      // Check if context is still mounted before showing dialog
+      if (!context.mounted) return;
+
+      var fileInfo = await FlutterFileDialog.saveFile(
+        params: SaveFileDialogParams(fileName: sanitizedFilename, data: response),
+      );
+
+      // Check if context is still mounted after async operation
+      if (!context.mounted) return;
+
       if (fileInfo == null) {
         return;
       }
@@ -47,16 +68,19 @@ Future<void> downloadUriToPickedFile(BuildContext context, Uri uri, String fileN
 
     // Otherwise, check we have the storage permission
     if (!storagePermission.isGranted) {
+      // Check if context is still mounted before showing snackbar
+      if (!context.mounted) return;
+
       ScaffoldMessenger.of(context).clearSnackBars();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(L10n.current.permission_not_granted),
-          action: SnackBarAction(
-            label: L10n.current.open_app_settings,
-            onPressed: openAppSettings,
-          ),
+          action: SnackBarAction(label: L10n.current.open_app_settings, onPressed: openAppSettings),
         ),
       );
+
+      // Check if context is still mounted before opening settings
+      if (!context.mounted) return;
 
       await openAppSettings();
       return;
@@ -68,8 +92,15 @@ Future<void> downloadUriToPickedFile(BuildContext context, Uri uri, String fileN
     if (Platform.isAndroid) {
       MediaScanner.loadMedia(path: savedFile);
     }
+
+    // Check if context is still mounted before calling onSuccess
+    if (!context.mounted) return;
+
     onSuccess();
   } catch (e) {
+    // Check if context is still mounted before showing snackbar
+    if (!context.mounted) return;
+
     showSnackBar(context, icon: '🙊', message: e.toString());
   }
 }
@@ -92,12 +123,17 @@ Future<Uint8List?> downloadFile(BuildContext context, Uri uri) async {
     return response.bodyBytes;
   }
 
+  // Check if context is still mounted before showing snackbar
+  if (!context.mounted) return null;
+
   ScaffoldMessenger.of(context).clearSnackBars();
-  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-    content: Text(
-      L10n.of(context).unable_to_save_the_media_twitter_returned_a_status_of_response_statusCode(response.statusCode),
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(
+      content: Text(
+        L10n.of(context).unable_to_save_the_media_twitter_returned_a_status_of_response_statusCode(response.statusCode),
+      ),
     ),
-  ));
+  );
 
   return null;
 }

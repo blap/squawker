@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/material.dart';
 import 'package:squawker/constants.dart';
 import 'package:squawker/generated/l10n.dart';
 import 'package:squawker/settings/_about.dart';
@@ -16,7 +15,7 @@ import 'package:pref/pref.dart';
 class SettingsScreen extends StatefulWidget {
   final String? initialPage;
 
-  const SettingsScreen({Key? key, this.initialPage}) : super(key: key);
+  const SettingsScreen({super.key, this.initialPage});
 
   @override
   State<SettingsScreen> createState() => _SettingsScreenState();
@@ -24,7 +23,7 @@ class SettingsScreen extends StatefulWidget {
 
 class _SettingsScreenState extends State<SettingsScreen> {
   PackageInfo _packageInfo = PackageInfo(appName: '', packageName: '', version: '', buildNumber: '');
-  String _legacyExportPath = '';
+  final String _legacyExportPath = '';
 
   @override
   void initState() {
@@ -47,11 +46,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return Scaffold(
       appBar: AppBar(title: Text(L10n.of(context).settings)),
       body: ListView(
-        padding: EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(16.0),
         children: [
           ListTile(
             title: Text(L10n.of(context).general),
-            leading: Icon(Icons.settings),
+            leading: const Icon(Icons.settings),
             onTap: () => Navigator.push(
               context,
               navigationAnimationsEnabled
@@ -61,7 +60,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           ListTile(
             title: Text(L10n.of(context).account),
-            leading: Icon(Icons.account_circle_rounded),
+            leading: const Icon(Icons.account_circle_rounded),
             onTap: () => Navigator.push(
               context,
               navigationAnimationsEnabled
@@ -71,7 +70,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           ListTile(
             title: Text(L10n.of(context).home),
-            leading: Icon(Icons.home),
+            leading: const Icon(Icons.home),
             onTap: () => Navigator.push(
               context,
               navigationAnimationsEnabled
@@ -81,7 +80,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           ListTile(
             title: Text(L10n.of(context).theme),
-            leading: Icon(Icons.palette),
+            leading: const Icon(Icons.palette),
             onTap: () => Navigator.push(
               context,
               navigationAnimationsEnabled
@@ -91,7 +90,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           ListTile(
             title: Text(L10n.of(context).data),
-            leading: Icon(Icons.storage),
+            leading: const Icon(Icons.storage),
             onTap: () => Navigator.push(
               context,
               navigationAnimationsEnabled
@@ -101,7 +100,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           ListTile(
             title: Text(L10n.of(context).about),
-            leading: Icon(Icons.info),
+            leading: const Icon(Icons.info),
             onTap: () => Navigator.push(
               context,
               navigationAnimationsEnabled

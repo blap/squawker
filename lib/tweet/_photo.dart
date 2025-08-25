@@ -10,7 +10,7 @@ class TweetPhoto extends StatefulWidget {
   final bool pullToClose;
   final bool inPageView;
 
-  const TweetPhoto({Key? key, required this.uri, this.fit = BoxFit.fitWidth, this.size, required this.pullToClose, required this.inPageView}) : super(key: key);
+  const TweetPhoto({super.key, required this.uri, this.fit = BoxFit.fitWidth, this.size, required this.pullToClose, required this.inPageView});
 
   @override
   State<TweetPhoto> createState() => _TweetPhotoState();

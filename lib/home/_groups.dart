@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/material.dart';
 import 'package:squawker/generated/l10n.dart';
 import 'package:squawker/group/group_model.dart';
 import 'package:squawker/home/home_screen.dart';
@@ -9,7 +8,7 @@ import 'package:provider/provider.dart';
 class GroupsScreen extends StatelessWidget {
   final ScrollController scrollController;
 
-  const GroupsScreen({Key? key, required this.scrollController}) : super(key: key);
+  const GroupsScreen({super.key, required this.scrollController});
 
   @override
   Widget build(BuildContext context) {

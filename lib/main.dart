@@ -4,17 +4,19 @@ import 'dart:io';
 //import 'package:device_preview/device_preview.dart';
 import 'package:faker/faker.dart';
 import 'package:flex_color_scheme/flex_color_scheme.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:flutter_windowmanager/flutter_windowmanager.dart';
+// import 'package:flutter_windowmanager/flutter_windowmanager.dart';
 import 'package:logging_to_logcat/logging_to_logcat.dart';
 import 'package:logging/logging.dart';
+import 'package:no_screenshot/no_screenshot.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:pref/pref.dart';
 import 'package:provider/provider.dart';
-import 'package:sqflite_common_ffi/sqflite_ffi.dart';
+// Conditional import for sqflite_common_ffi based on platform
+import 'package:sqflite_common_ffi/sqflite_ffi.dart' if (dart.library.io) 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:squawker/client/app_http_client.dart';
 import 'package:squawker/client/client_account.dart';
 import 'package:squawker/constants.dart';
@@ -25,6 +27,8 @@ import 'package:squawker/group/group_screen.dart';
 import 'package:squawker/home/home_model.dart';
 import 'package:squawker/home/home_screen.dart';
 import 'package:squawker/import_data_model.dart';
+import 'package:squawker/live_event/broadcast_screen.dart';
+import 'package:squawker/live_event/live_event_screen.dart';
 import 'package:squawker/profile/profile.dart';
 import 'package:squawker/saved/saved_tweet_model.dart';
 import 'package:squawker/search/search.dart';
@@ -62,19 +66,21 @@ Future checkForUpdates() async {
       if (map["tag_name"] != 'v${packageInfo.version}') {
         await requestPostNotificationsPermissions(() async {
           await FlutterLocalNotificationsPlugin().show(
-              0,
-              'An update for Squawker is available! 🚀',
-              'View version ${map["tag_name"]} on Github',
-              const NotificationDetails(
-                  android: AndroidNotificationDetails(
-                    'updates',
-                    'Updates',
-                    channelDescription: 'When a new app update is available show a notification',
-                    importance: Importance.max,
-                    priority: Priority.high,
-                    showWhen: false,
-                  )),
-              payload: map['html_url']);
+            0,
+            'An update for Squawker is available! 🚀',
+            'View version ${map["tag_name"]} on Github',
+            const NotificationDetails(
+              android: AndroidNotificationDetails(
+                'updates',
+                'Updates',
+                channelDescription: 'When a new app update is available show a notification',
+                importance: Importance.max,
+                priority: Priority.high,
+                showWhen: false,
+              ),
+            ),
+            payload: map['html_url'],
+          );
         });
       } else if (map['html_url'].isEmpty) {
         Logger.root.severe('Unable to check for updates');
@@ -94,7 +100,7 @@ class UnableToCheckForUpdatesException {
   }
 }
 
-setTimeagoLocales() {
+void setTimeagoLocales() {
   timeago.setLocaleMessages('ar', timeago.ArMessages());
   timeago.setLocaleMessages('az', timeago.AzMessages());
   timeago.setLocaleMessages('ca', timeago.CaMessages());
@@ -136,7 +142,6 @@ setTimeagoLocales() {
 }
 
 Future<void> main() async {
-
   Logger.root.activateLogcat();
   Logger.root.level = Level.ALL;
 
@@ -149,47 +154,50 @@ Future<void> main() async {
 
   setTimeagoLocales();
 
-  final prefService = await PrefServiceShared.init(prefix: 'pref_', defaults: {
-    optionDisableScreenshots: false,
-    optionDownloadPath: '',
-    optionDownloadType: optionDownloadTypeAsk,
-    optionHomePages: defaultHomePages.map((e) => e.id).toList(),
-    optionLocale: optionLocaleDefault,
-    optionHomeInitialTab: 'feed',
-    optionNavigationAnimations: true,
-    optionHomeShowTabLabels: true,
-    optionSubscriptionInitialTab: 'tweets',
-    optionMediaSize: 'medium',
-    optionMediaDefaultMute: true,
-    optionMediaAllowBackgroundPlay: true,
-    optionMediaAllowBackgroundPlayOtherApps: true,
-    optionNonConfirmationBiasMode: false,
-    optionDownloadBestVideoQuality: false,
-    optionShouldCheckForUpdates: (getFlavor() != 'play' && getFlavor() != 'fdroid') ? true : false,
-    optionSubscriptionGroupsOrderByAscending: true,
-    optionSubscriptionGroupsOrderByField: 'name',
-    optionSubscriptionOrderByAscending: true,
-    optionSubscriptionOrderByField: 'name',
-    optionSubscriptionOrderCustom: '',
-    optionThemeMode: 'system',
-    optionThemeTrueBlack: false,
-    optionThemeColorScheme: 'mango',
-    optionTweetsHideSensitive: false,
-    optionKeepFeedOffset: false,
-    optionLeanerFeeds: false,
-    optionExclusionsFeed: '',
-    optionConfirmClose: true,
-    optionEnhancedFeeds: true,
-    optionEnhancedSearches: true,
-    optionEnhancedProfile: true,
-    optionTwitterAccountTypes: twitterAccountTypesPriorityToRegular,
-    optionUserTrendsLocations: jsonEncode({
-      'active': {'name': 'Worldwide', 'woeid': 1},
-      'locations': [
-        {'name': 'Worldwide', 'woeid': 1}
-      ]
-    }),
-  });
+  final prefService = await PrefServiceShared.init(
+    prefix: 'pref_',
+    defaults: {
+      optionDisableScreenshots: false,
+      optionDownloadPath: '',
+      optionDownloadType: optionDownloadTypeAsk,
+      optionHomePages: defaultHomePages.map((e) => e.id).toList(),
+      optionLocale: optionLocaleDefault,
+      optionHomeInitialTab: 'feed',
+      optionNavigationAnimations: true,
+      optionHomeShowTabLabels: true,
+      optionSubscriptionInitialTab: 'tweets',
+      optionMediaSize: 'medium',
+      optionMediaDefaultMute: true,
+      optionMediaAllowBackgroundPlay: true,
+      optionMediaAllowBackgroundPlayOtherApps: true,
+      optionNonConfirmationBiasMode: false,
+      optionDownloadBestVideoQuality: false,
+      optionShouldCheckForUpdates: (getFlavor() != 'play' && getFlavor() != 'fdroid') ? true : false,
+      optionSubscriptionGroupsOrderByAscending: true,
+      optionSubscriptionGroupsOrderByField: 'name',
+      optionSubscriptionOrderByAscending: true,
+      optionSubscriptionOrderByField: 'name',
+      optionSubscriptionOrderCustom: '',
+      optionThemeMode: 'system',
+      optionThemeTrueBlack: false,
+      optionThemeColorScheme: 'mango',
+      optionTweetsHideSensitive: false,
+      optionKeepFeedOffset: false,
+      optionLeanerFeeds: false,
+      optionExclusionsFeed: '',
+      optionConfirmClose: true,
+      optionEnhancedFeeds: true,
+      optionEnhancedSearches: true,
+      optionEnhancedProfile: true,
+      optionTwitterAccountTypes: twitterAccountTypesPriorityToRegular,
+      optionUserTrendsLocations: jsonEncode({
+        'active': {'name': 'Worldwide', 'woeid': 1},
+        'locations': [
+          {'name': 'Worldwide', 'woeid': 1},
+        ],
+      }),
+    },
+  );
 
   await AccentUtil.load();
 
@@ -197,15 +205,19 @@ Future<void> main() async {
 
   FlutterLocalNotificationsPlugin notifications = FlutterLocalNotificationsPlugin();
 
-  const InitializationSettings settings =
-      InitializationSettings(android: AndroidInitializationSettings('@drawable/ic_notification'));
+  const InitializationSettings settings = InitializationSettings(
+    android: AndroidInitializationSettings('@drawable/ic_notification'),
+  );
 
-  await notifications.initialize(settings, onDidReceiveNotificationResponse: (response) async {
-    var payload = response.payload;
-    if (payload != null && payload.startsWith('https://')) {
-      await openUri(payload);
-    }
-  });
+  await notifications.initialize(
+    settings,
+    onDidReceiveNotificationResponse: (response) async {
+      var payload = response.payload;
+      if (payload != null && payload.startsWith('https://')) {
+        await openUri(payload);
+      }
+    },
+  );
 
   var shouldCheckForUpdates = prefService.get(optionShouldCheckForUpdates);
   if (shouldCheckForUpdates) {
@@ -242,33 +254,36 @@ Future<void> main() async {
 
   TranslationAPI.setTranslationHostsFromStr(prefService.get(optionTranslators));
 
-  runApp(PrefService(
-    service: prefService,
-    child: MultiProvider(
-      providers: [
-        Provider(create: (context) => groupsModel),
-        Provider(create: (context) => homeModel),
-        ChangeNotifierProvider(create: (context) => importDataModel),
-        Provider(create: (context) => twitterTokensModel),
-        Provider(create: (context) => subscriptionsModel),
-        Provider(create: (context) => SavedTweetModel()),
-        Provider(create: (context) => SearchTweetsModel()),
-        Provider(create: (context) => SearchUsersModel()),
-        Provider(create: (context) => trendLocationModel),
-        Provider(create: (context) => TrendLocationsModel()),
-        Provider(create: (context) => TrendsModel(trendLocationModel)),
-        ChangeNotifierProvider(create: (_) => VideoContextState(prefService.get(optionMediaDefaultMute))),
-      ],
-      child: /*DevicePreview(
+  runApp(
+    PrefService(
+      service: prefService,
+      child: MultiProvider(
+        providers: [
+          Provider(create: (context) => groupsModel),
+          Provider(create: (context) => homeModel),
+          ChangeNotifierProvider(create: (context) => importDataModel),
+          Provider(create: (context) => twitterTokensModel),
+          Provider(create: (context) => subscriptionsModel),
+          Provider(create: (context) => SavedTweetModel()),
+          Provider(create: (context) => SearchTweetsModel()),
+          Provider(create: (context) => SearchUsersModel()),
+          Provider(create: (context) => trendLocationModel),
+          Provider(create: (context) => TrendLocationsModel()),
+          Provider(create: (context) => TrendsModel(trendLocationModel)),
+          ChangeNotifierProvider(create: (_) => VideoContextState(prefService.get(optionMediaDefaultMute))),
+        ],
+        child: /*DevicePreview(
         enabled: !kReleaseMode,
-        builder: (context) => */const SquawkerApp(),
-      /*),*/
-    )
-  ));
+        builder: (context) => */
+            const SquawkerApp(),
+        /*),*/
+      ),
+    ),
+  );
 }
 
 class SquawkerApp extends StatefulWidget {
-  const SquawkerApp({Key? key}) : super(key: key);
+  const SquawkerApp({super.key});
 
   @override
   State<SquawkerApp> createState() => _SquawkerAppState();
@@ -297,32 +312,46 @@ class _SquawkerAppState extends State<SquawkerApp> with WidgetsBindingObserver {
         var splitLocale = locale.split('_');
         if (splitLocale.length == 1) {
           _locale = L10n.delegate.supportedLocales.firstWhereOrNull((e) => e.languageCode == splitLocale[0]);
-        }
-        else if (splitLocale.length == 2) {
+        } else if (splitLocale.length == 2) {
           if (splitLocale[1].length == 2) {
-            _locale = L10n.delegate.supportedLocales.firstWhereOrNull((e) => e.languageCode == splitLocale[0] && e.countryCode == splitLocale[1]);
+            _locale = L10n.delegate.supportedLocales.firstWhereOrNull(
+              (e) => e.languageCode == splitLocale[0] && e.countryCode == splitLocale[1],
+            );
+          } else {
+            // splitLocale[1].length == 4
+            _locale = L10n.delegate.supportedLocales.firstWhereOrNull(
+              (e) => e.languageCode == splitLocale[0] && e.scriptCode == splitLocale[1],
+            );
           }
-          else { // splitLocale[1].length == 4
-            _locale = L10n.delegate.supportedLocales.firstWhereOrNull((e) => e.languageCode == splitLocale[0] && e.scriptCode == splitLocale[1]);
-          }
-        }
-        else { // splitLocale.length == 3
-          _locale = L10n.delegate.supportedLocales.firstWhereOrNull((e) => e.languageCode == splitLocale[0] && e.scriptCode == splitLocale[1] && e.countryCode == splitLocale[2]);
+        } else {
+          // splitLocale.length == 3
+          _locale = L10n.delegate.supportedLocales.firstWhereOrNull(
+            (e) =>
+                e.languageCode == splitLocale[0] && e.scriptCode == splitLocale[1] && e.countryCode == splitLocale[2],
+          );
         }
       }
     }
 
     void setColorScheme(String colorSchemeName) {
-      _colorScheme = colorSchemeName != 'accent' ? FlexScheme.values.byName(colorSchemeName) : FlexScheme.materialBaseline;
+      _colorScheme = colorSchemeName != 'accent'
+          ? FlexScheme.values.byName(colorSchemeName)
+          : FlexScheme.materialBaseline;
       _accentColor = colorSchemeName != 'accent' ? false : true;
     }
 
-    // TODO: This doesn't work on iOS
+    // Implemented: Now works on both Android and iOS using the no_screenshot package
+    final noScreenshot = NoScreenshot.instance;
+
     void setDisableScreenshots(final bool secureModeEnabled) async {
       if (secureModeEnabled) {
-        await FlutterWindowManager.addFlags(FlutterWindowManager.FLAG_SECURE);
+        // Disable screenshots and screen recording on both Android and iOS
+        bool result = await noScreenshot.screenshotOff();
+        Logger.root.info('Screenshot prevention enabled: $result');
       } else {
-        await FlutterWindowManager.clearFlags(FlutterWindowManager.FLAG_SECURE);
+        // Enable screenshots and screen recording on both Android and iOS
+        bool result = await noScreenshot.screenshotOn();
+        Logger.root.info('Screenshot prevention disabled: $result');
       }
     }
 
@@ -398,10 +427,7 @@ class _SquawkerAppState extends State<SquawkerApp> with WidgetsBindingObserver {
       blendLevel: 20,
       appBarOpacity: 0.95,
       tabBarStyle: FlexTabBarStyle.flutterDefault,
-      subThemesData: const FlexSubThemesData(
-        blendOnLevel: 20,
-        blendOnColors: false,
-      ),
+      subThemesData: const FlexSubThemesData(blendOnLevel: 20, blendOnColors: false),
       visualDensity: FlexColorScheme.comfortablePlatformDensity,
       useMaterial3ErrorColors: true,
       useMaterial3: true,
@@ -415,10 +441,7 @@ class _SquawkerAppState extends State<SquawkerApp> with WidgetsBindingObserver {
       blendLevel: 20,
       appBarOpacity: 0.95,
       tabBarStyle: FlexTabBarStyle.flutterDefault,
-      subThemesData: const FlexSubThemesData(
-        blendOnLevel: 20,
-        blendOnColors: false,
-      ),
+      subThemesData: const FlexSubThemesData(blendOnLevel: 20, blendOnColors: false),
       visualDensity: FlexColorScheme.comfortablePlatformDensity,
       useMaterial3ErrorColors: true,
       useMaterial3: true,
@@ -452,24 +475,26 @@ class _SquawkerAppState extends State<SquawkerApp> with WidgetsBindingObserver {
           if (supportedLocalesCountryCode.contains(localesCountryCode[i]) &&
               supportedLocalesScriptCode.contains(localesScriptCode[i]) &&
               supportedLocalesLanguageCode.contains(localesLanguageCode[i])) {
-            log.info('*** Locale Country: ${localesCountryCode[i]}, Script: ${localesScriptCode[i]}, Language: ${localesLanguageCode[i]}');
-            return Locale.fromSubtags(countryCode: localesCountryCode[i], scriptCode: localesScriptCode[i], languageCode: localesLanguageCode[i]);
-          }
-          else if (supportedLocalesCountryCode.contains(localesCountryCode[i]) &&
-                   supportedLocalesLanguageCode.contains(localesLanguageCode[i])) {
+            log.info(
+              '*** Locale Country: ${localesCountryCode[i]}, Script: ${localesScriptCode[i]}, Language: ${localesLanguageCode[i]}',
+            );
+            return Locale.fromSubtags(
+              countryCode: localesCountryCode[i],
+              scriptCode: localesScriptCode[i],
+              languageCode: localesLanguageCode[i],
+            );
+          } else if (supportedLocalesCountryCode.contains(localesCountryCode[i]) &&
+              supportedLocalesLanguageCode.contains(localesLanguageCode[i])) {
             log.info('*** Locale Country: ${localesCountryCode[i]}, Language: ${localesLanguageCode[i]}');
             return Locale.fromSubtags(countryCode: localesCountryCode[i], languageCode: localesLanguageCode[i]);
-          }
-          else if (supportedLocalesScriptCode.contains(localesScriptCode[i]) &&
-                   supportedLocalesLanguageCode.contains(localesLanguageCode[i])) {
+          } else if (supportedLocalesScriptCode.contains(localesScriptCode[i]) &&
+              supportedLocalesLanguageCode.contains(localesLanguageCode[i])) {
             log.info('*** Locale Script: ${localesScriptCode[i]}, Language: ${localesLanguageCode[i]}');
             return Locale.fromSubtags(scriptCode: localesScriptCode[i], languageCode: localesLanguageCode[i]);
-          }
-          else if (supportedLocalesLanguageCode.contains(localesLanguageCode[i])) {
+          } else if (supportedLocalesLanguageCode.contains(localesLanguageCode[i])) {
             log.info('*** Locale Language: ${localesLanguageCode[i]}');
             return Locale.fromSubtags(languageCode: localesLanguageCode[i]);
-          }
-          else {
+          } else {
             log.info('*** No Locale, so Language: en');
           }
         }
@@ -499,64 +524,62 @@ class _SquawkerAppState extends State<SquawkerApp> with WidgetsBindingObserver {
       themeMode: themeMode,
       debugShowCheckedModeBanner: false,
       initialRoute: routeHome,
-      navigatorObservers: [
-        _routeObserver
-      ],
+      navigatorObservers: [_routeObserver],
       onGenerateRoute: (settings) {
         if (settings.name == routeHome) {
           return navigationAnimationsEnabled
-            ? MaterialPageRoute(builder: (context) => const DefaultPage())
-            : PageRouteBuilder(pageBuilder: (context, anim1, anim2) => const DefaultPage());
-        }
-        else if (settings.name == routeGroup) {
+              ? MaterialPageRoute(builder: (context) => const DefaultPage())
+              : PageRouteBuilder(pageBuilder: (context, anim1, anim2) => const DefaultPage());
+        } else if (settings.name == routeGroup) {
           return navigationAnimationsEnabled
-            ? MaterialPageRoute(builder: (context) => const GroupScreen())
-            : PageRouteBuilder(pageBuilder: (context, anim1, anim2) => const GroupScreen());
-        }
-        else if (settings.name == routeProfile) {
+              ? MaterialPageRoute(builder: (context) => const GroupScreen())
+              : PageRouteBuilder(pageBuilder: (context, anim1, anim2) => const GroupScreen());
+        } else if (settings.name == routeProfile) {
           return navigationAnimationsEnabled
-            ? MaterialPageRoute(builder: (context) => const ProfileScreen())
-            : PageRouteBuilder(pageBuilder: (context, anim1, anim2) => const ProfileScreen());
-        }
-        else if (settings.name == routeSearch) {
+              ? MaterialPageRoute(builder: (context) => const ProfileScreen())
+              : PageRouteBuilder(pageBuilder: (context, anim1, anim2) => const ProfileScreen());
+        } else if (settings.name == routeSearch) {
           return navigationAnimationsEnabled
-            ? MaterialPageRoute(builder: (context) => const SearchScreen())
-            : PageRouteBuilder(pageBuilder: (context, anim1, anim2) => const SearchScreen());
-        }
-        else if (settings.name == routeSettings) {
+              ? MaterialPageRoute(builder: (context) => const SearchScreen())
+              : PageRouteBuilder(pageBuilder: (context, anim1, anim2) => const SearchScreen());
+        } else if (settings.name == routeSettings) {
           return navigationAnimationsEnabled
-            ? MaterialPageRoute(builder: (context) => const SettingsScreen())
-            : PageRouteBuilder(pageBuilder: (context, anim1, anim2) => const SettingsScreen());
-        }
-        else if (settings.name == routeSettingsExport) {
+              ? MaterialPageRoute(builder: (context) => const SettingsScreen())
+              : PageRouteBuilder(pageBuilder: (context, anim1, anim2) => const SettingsScreen());
+        } else if (settings.name == routeSettingsExport) {
           return navigationAnimationsEnabled
-            ? MaterialPageRoute(builder: (context) => const SettingsExportScreen())
-            : PageRouteBuilder(pageBuilder: (context, anim1, anim2) => const SettingsExportScreen());
-        }
-        else if (settings.name == routeSettingsHome) {
+              ? MaterialPageRoute(builder: (context) => const SettingsExportScreen())
+              : PageRouteBuilder(pageBuilder: (context, anim1, anim2) => const SettingsExportScreen());
+        } else if (settings.name == routeSettingsHome) {
           return navigationAnimationsEnabled
-            ? MaterialPageRoute(builder: (context) => const SettingsScreen(initialPage: 'home'))
-            : PageRouteBuilder(pageBuilder: (context, anim1, anim2) => const SettingsScreen(initialPage: 'home'));
-        }
-        else if (settings.name == routeStatus) {
+              ? MaterialPageRoute(builder: (context) => const SettingsScreen(initialPage: 'home'))
+              : PageRouteBuilder(pageBuilder: (context, anim1, anim2) => const SettingsScreen(initialPage: 'home'));
+        } else if (settings.name == routeStatus) {
           return navigationAnimationsEnabled
-            ? MaterialPageRoute(builder: (context) => const StatusScreen())
-            : PageRouteBuilder(pageBuilder: (context, anim1, anim2) => const StatusScreen());
-        }
-        else if (settings.name == routeSubscriptionsImport) {
+              ? MaterialPageRoute(builder: (context) => const StatusScreen())
+              : PageRouteBuilder(pageBuilder: (context, anim1, anim2) => const StatusScreen());
+        } else if (settings.name == routeSubscriptionsImport) {
           return navigationAnimationsEnabled
-            ? MaterialPageRoute(builder: (context) => const SubscriptionImportScreen())
-            : PageRouteBuilder(pageBuilder: (context, anim1, anim2) => const SubscriptionImportScreen());
+              ? MaterialPageRoute(builder: (context) => const SubscriptionImportScreen())
+              : PageRouteBuilder(pageBuilder: (context, anim1, anim2) => const SubscriptionImportScreen());
+        } else if (settings.name == routeLiveEvent) {
+          return navigationAnimationsEnabled
+              ? MaterialPageRoute(builder: (context) => const LiveEventScreen())
+              : PageRouteBuilder(pageBuilder: (context, anim1, anim2) => const LiveEventScreen());
+        } else if (settings.name == routeBroadcast) {
+          return navigationAnimationsEnabled
+              ? MaterialPageRoute(builder: (context) => const BroadcastScreen())
+              : PageRouteBuilder(pageBuilder: (context, anim1, anim2) => const BroadcastScreen());
         }
         return null;
       },
       builder: (context, child) {
         // Replace the default red screen of death with a slightly friendlier one
         ErrorWidget.builder = (FlutterErrorDetails details) => FullPageErrorWidget(
-              error: details.exception,
-              stackTrace: details.stack,
-              prefix: L10n.of(context).something_broke_in_fritter,
-            );
+          error: details.exception,
+          stackTrace: details.stack,
+          prefix: L10n.of(context).something_broke_in_fritter,
+        );
 
         return child ?? Container(); //DevicePreview.appBuilder(context, child ?? Container());
       },
@@ -565,7 +588,7 @@ class _SquawkerAppState extends State<SquawkerApp> with WidgetsBindingObserver {
 }
 
 class DefaultPage extends StatefulWidget {
-  const DefaultPage({Key? key}) : super(key: key);
+  const DefaultPage({super.key});
 
   @override
   State<StatefulWidget> createState() => _DefaultPageState();
@@ -593,37 +616,41 @@ class _DefaultPageState extends State<DefaultPage> {
   Widget build(BuildContext context) {
     if (_migrationError != null || _migrationStackTrace != null) {
       return ScaffoldErrorWidget(
-          error: _migrationError,
-          stackTrace: _migrationStackTrace,
-          prefix: L10n.of(context).unable_to_run_the_database_migrations);
+        error: _migrationError,
+        stackTrace: _migrationStackTrace,
+        prefix: L10n.of(context).unable_to_run_the_database_migrations,
+      );
     }
 
-    return WillPopScope(
-        onWillPop: () async {
-          var prefService = PrefService.of(context);
-          if (!prefService.get(optionConfirmClose)) {
-            return true;
-          }
-          var result = await showDialog<bool>(
-            context: context,
-            builder: (c) => AlertDialog(
-              title: Text(L10n.current.are_you_sure),
-              content: Text(L10n.current.confirm_close_fritter),
-              actions: [
-                TextButton(
-                  child: Text(L10n.current.no),
-                  onPressed: () => Navigator.pop(c, false),
-                ),
-                TextButton(
-                  child: Text(L10n.current.yes),
-                  onPressed: () => Navigator.pop(c, true),
-                ),
-              ],
-            ));
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (bool didPop, Object? result) async {
+        var prefService = PrefService.of(context);
+        if (!prefService.get(optionConfirmClose)) {
+          // Allow the app to close without confirmation
+          SystemNavigator.pop();
+          return;
+        }
 
-          return result ?? false;
-        },
-        child: const HomeScreen());
+        var dialogResult = await showDialog<bool>(
+          context: context,
+          builder: (c) => AlertDialog(
+            title: Text(L10n.current.are_you_sure),
+            content: Text(L10n.current.confirm_close_fritter),
+            actions: [
+              TextButton(child: Text(L10n.current.no), onPressed: () => Navigator.pop(c, false)),
+              TextButton(child: Text(L10n.current.yes), onPressed: () => Navigator.pop(c, true)),
+            ],
+          ),
+        );
+
+        if (dialogResult ?? false) {
+          // User confirmed closing the app
+          SystemNavigator.pop();
+        }
+      },
+      child: const HomeScreen(),
+    );
   }
 
   @override
@@ -633,7 +660,6 @@ class _DefaultPageState extends State<DefaultPage> {
 }
 
 class _MyRouteObserver extends RouteObserver<PageRoute<dynamic>> {
-
   @override
   void didPop(Route<dynamic> route, Route<dynamic>? previousRoute) async {
     super.didPop(route, previousRoute);
@@ -648,5 +674,4 @@ class _MyRouteObserver extends RouteObserver<PageRoute<dynamic>> {
       }
     }
   }
-
 }

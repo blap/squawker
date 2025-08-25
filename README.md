@@ -65,5 +65,57 @@ If you're looking for something to dip your toes into the codebase, check if the
 ### Translations
 Most of Squawker's translations have come from [Weblate](https://hosted.weblate.org/engage/squawker/)
 
+### Building from Source
+
+To build Squawker from source, you'll need to have Flutter installed on your system.
+
+#### Prerequisites
+- Flutter SDK
+- Android Studio (for Android builds)
+- Xcode (for iOS builds, macOS only)
+
+#### Build Scripts
+This repository includes several scripts to simplify the build process:
+
+1. **build_apk.bat** - Simple batch script to build a release APK
+2. **build_apk_advanced.bat** - Advanced batch script with multiple build options
+3. **build_apk.ps1** - PowerShell script for building APKs
+
+#### Manual Build Process
+1. Clone the repository:
+   ```
+   git clone https://github.com/j-fbriere/squawker.git
+   ```
+2. Navigate to the project directory:
+   ```
+   cd squawker
+   ```
+3. Get dependencies:
+   ```
+   flutter pub get
+   ```
+4. Build the APK:
+   ```
+   flutter build apk --release --no-tree-shake-icons
+   ```
+
+The built APK will be located at `build/app/outputs/flutter-apk/app-release.apk`.
+
+#### Build Warnings
+During the build process, you may see warnings like:
+```
+warning: [options] source value 8 is obsolete and will be removed in a future release
+```
+and
+```
+Info: Proguard configuration rule does not match anything: `-keepclassmembers class j$.util.concurrent.ConcurrentHashMap...
+```
+
+These warnings are normal and don't affect the functionality of the built APK:
+- The Java version warnings occur because some dependencies still reference older Java versions, but they don't prevent the build
+- The ProGuard warnings are related to unused configuration rules and can be safely ignored. These have been properly configured in the project with specific rules in `android/app/proguard-rules.pro` to suppress them without affecting functionality.
+
+The project now includes specific ProGuard rules in `android/app/proguard-rules.pro` to handle these warnings properly, ensuring they don't cause build failures while maintaining the security and optimization benefits of code shrinking and obfuscation.
+
 ### Acknowledgments
 Duck Icon: <a href="https://www.vecteezy.com/free-vector/bathroom">Bathroom Vectors by Vecteezy</a>

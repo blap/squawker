@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/material.dart';
 import 'package:squawker/trends/_list.dart';
 import 'package:squawker/trends/_settings.dart';
 import 'package:squawker/trends/_tabs.dart';
 
 class TrendsScreen extends StatefulWidget {
-  const TrendsScreen({Key? key}) : super(key: key);
+  const TrendsScreen({super.key});
 
   @override
   State<TrendsScreen> createState() => _TrendsScreenState();
@@ -27,7 +26,7 @@ class _TrendsScreenState extends State<TrendsScreen> with AutomaticKeepAliveClie
                 context: context,
                 builder: (context) => const TrendsSettings(),
               )),
-      body: TrendsList(),
+      body: const TrendsList(),
     );
   }
 }

@@ -22,6 +22,55 @@ class SubscriptionsModel extends Store<List<Subscription>> {
     _twitter = Twitter();
   }
 
+  /// Sorts the current state based on user preferences without reloading from database
+  void _sortState() {
+    String orderCustom = prefs.get(optionSubscriptionOrderCustom);
+    bool orderByAscending = prefs.get(optionSubscriptionOrderByAscending);
+    String orderByField = prefs.get(optionSubscriptionOrderByField);
+
+    if (orderCustom.isEmpty) {
+      state.sort((a, b) {
+        var one = orderByAscending ? a : b;
+        var two = orderByAscending ? b : a;
+
+        switch (orderByField) {
+          case 'name':
+            return one.name.toLowerCase().compareTo(two.name.toLowerCase());
+          case 'screen_name':
+            return one.screenName.toLowerCase().compareTo(two.screenName.toLowerCase());
+          case 'created_at':
+            return one.createdAt.compareTo(two.createdAt);
+          default:
+            return one.name.toLowerCase().compareTo(two.name.toLowerCase());
+        }
+      });
+    } else {
+      // Handle custom ordering
+      List<Subscription> newLst = [];
+      for (String screenName in orderCustom.split(',')) {
+        Subscription? s = state.firstWhereOrNull((e) => e.screenName == screenName);
+        if (s != null) {
+          newLst.add(s);
+        }
+      }
+      // Add remaining items that weren't in the custom order
+      for (Subscription s in state) {
+        if (!newLst.contains(s)) {
+          newLst.add(s);
+        }
+      }
+      state
+        ..clear()
+        ..addAll(newLst);
+
+      // Update the custom order preference to match the current state
+      prefs.set(optionSubscriptionOrderCustom, newLst.map((s) => s.screenName).join(','));
+    }
+
+    // Notify listeners of the state change
+    update(state, force: true);
+  }
+
   Future<void> reloadSubscriptions() async {
     log.info('Reloading subscriptions');
 
@@ -32,9 +81,13 @@ class SubscriptionsModel extends Store<List<Subscription>> {
       bool orderByAscending = prefs.get(optionSubscriptionOrderByAscending);
       String orderByField = prefs.get(optionSubscriptionOrderByField);
 
-      List<Subscription> users = (await database.query(tableSubscription)).map((e) => UserSubscription.fromMap(e)).toList();
+      List<Subscription> users = (await database.query(
+        tableSubscription,
+      )).map((e) => UserSubscription.fromMap(e)).toList();
 
-      List<Subscription> searches = (await database.query(tableSearchSubscription)).map((e) => SearchSubscription.fromMap(e)).toList();
+      List<Subscription> searches = (await database.query(
+        tableSearchSubscription,
+      )).map((e) => SearchSubscription.fromMap(e)).toList();
 
       List<Subscription> lst = [...users, ...searches];
       if (orderCustom.isEmpty) {
@@ -53,10 +106,9 @@ class SubscriptionsModel extends Store<List<Subscription>> {
               return one.name.toLowerCase().compareTo(two.name.toLowerCase());
           }
         }).toList();
-      }
-      else {
+      } else {
         List<Subscription> newLst = [];
-        for(String screenName in orderCustom.split(',')) {
+        for (String screenName in orderCustom.split(',')) {
           Subscription? s = lst.firstWhereOrNull((e) => e.screenName == screenName);
           if (s != null) {
             lst.removeWhere((e) => e.screenName == screenName);
@@ -88,15 +140,16 @@ class SubscriptionsModel extends Store<List<Subscription>> {
       var batch = database.batch();
       for (var user in users) {
         batch.update(
-            tableSubscription,
-            {
-              'screen_name': user.screenName,
-              'name': user.name,
-              'profile_image_url_https': user.profileImageUrlHttps,
-              'verified': (user.verified ?? false) ? 1 : 0
-            },
-            where: 'id = ?',
-            whereArgs: [user.idStr]);
+          tableSubscription,
+          {
+            'screen_name': user.screenName,
+            'name': user.name,
+            'profile_image_url_https': user.profileImageUrlHttps,
+            'verified': (user.verified ?? false) ? 1 : 0,
+          },
+          where: 'id = ?',
+          whereArgs: [user.idStr],
+        );
       }
 
       await batch.commit();
@@ -116,13 +169,12 @@ class SubscriptionsModel extends Store<List<Subscription>> {
 
         state.removeWhere((e) => e.id == user.id);
       } else {
-        database.insert(tableSearchSubscription, {
-          'id': user.id,
-        });
+        database.insert(tableSearchSubscription, {'id': user.id});
       }
 
-      // TODO: This is hardcore, but we need to resort the list and this is the easiest way
-      await reloadSubscriptions();
+      // FIXED: Instead of reloading all subscriptions, we now sort the existing state directly
+      // This is more efficient as it avoids a database query and only sorts the in-memory list
+      _sortState();
 
       return state;
     });
@@ -144,12 +196,13 @@ class SubscriptionsModel extends Store<List<Subscription>> {
           'name': user.name,
           'profile_image_url_https': user.profileImageUrlHttps,
           'verified': user.verified ? 1 : 0,
-          'in_feed': 1
+          'in_feed': 1,
         });
       }
 
-      // TODO: This is hardcore, but we need to resort the list and this is the easiest way
-      await reloadSubscriptions();
+      // FIXED: Instead of reloading all subscriptions, we now sort the existing state directly
+      // This is more efficient as it avoids a database query and only sorts the in-memory list
+      _sortState();
 
       return state;
     });
@@ -170,9 +223,7 @@ class SubscriptionsModel extends Store<List<Subscription>> {
   Future<void> toggleFeed(Subscription user, bool currentlyInFeed) async {
     var database = await Repository.writable();
     await execute(() async {
-      database.update(tableSubscription, {
-        'in_Feed': currentlyInFeed ? 0 : 1
-      }, where: 'id = ?', whereArgs: [user.id]);
+      database.update(tableSubscription, {'in_Feed': currentlyInFeed ? 0 : 1}, where: 'id = ?', whereArgs: [user.id]);
 
       await reloadSubscriptions();
 

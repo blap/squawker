@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_triple/flutter_triple.dart';
 import 'package:http/http.dart' as http;
 import 'package:logging/logging.dart';
-import 'package:flutter/material.dart';
 import 'package:squawker/client/app_http_client.dart';
 import 'package:squawker/client/client_account.dart';
 import 'package:squawker/constants.dart';
@@ -50,7 +49,7 @@ List<Widget> createCommonAppBarActions(BuildContext context) {
       onPressed: () {
         Navigator.pushNamed(context, routeSettings);
       },
-    )
+    ),
   ];
 }
 
@@ -63,7 +62,7 @@ final List<NavigationPage> defaultHomePages = [
 ];
 
 class HomeScreen extends StatelessWidget {
-  const HomeScreen({Key? key}) : super(key: key);
+  const HomeScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -78,7 +77,7 @@ class _HomeScreen extends StatefulWidget {
   final BasePrefService prefs;
   final HomeModel model;
 
-  const _HomeScreen({Key? key, required this.prefs, required this.model}) : super(key: key);
+  const _HomeScreen({required this.prefs, required this.model});
 
   @override
   State<_HomeScreen> createState() => _HomeScreenState();
@@ -93,7 +92,10 @@ class _HomeScreenState extends State<_HomeScreen> {
   final GlobalKey<FeedScreenState> _feedKey = GlobalKey<FeedScreenState>();
   final GlobalKey<ScaffoldWithBottomNavigationState> _navigationKey = GlobalKey<ScaffoldWithBottomNavigationState>();
 
-  Future<void> handleInitialLink(Uri link) async {
+  Future<void> handleInitialLink(BuildContext context, Uri link) async {
+    // Check if the widget is still mounted before proceeding
+    if (!context.mounted) return;
+
     //if (kDebugMode) {
     log.info('****** handleInitialLink - link=$link');
     //}
@@ -103,6 +105,9 @@ class _HomeScreenState extends State<_HomeScreen> {
         link = lnk;
       }
     }
+
+    // Check if the widget is still mounted before proceeding
+    if (!context.mounted) return;
 
     // Assume it's a username if there's only one segment (or two segments with the second empty, meaning the URI ends with /)
     if (link.pathSegments.length == 1 || (link.pathSegments.length == 2 && link.pathSegments.last.isEmpty)) {
@@ -118,21 +123,25 @@ class _HomeScreenState extends State<_HomeScreen> {
         // This is a redirect URL, so we should extract it and use that as our initial link instead
         var redirect = link.queryParameters['url'];
         if (redirect == null) {
-          // TODO
+          // If redirect URL is missing, log the issue and return
+          log.warning('Redirect URL is missing in handleInitialLink');
           return;
         }
 
-        await handleInitialLink(Uri.parse(redirect));
+        await handleInitialLink(context, Uri.parse(redirect));
         return;
       }
     }
+
+    // Check if the widget is still mounted before proceeding
+    if (!context.mounted) return;
 
     if (link.pathSegments.length >= 3 && link.pathSegments[1] == 'status') {
       // Assume it's a tweet
       var username = link.pathSegments[0];
       var statusId = link.pathSegments[2];
 
-      pushNamedRoute(context, routeStatus, StatusScreenArguments(id: statusId, username: username,));
+      pushNamedRoute(context, routeStatus, StatusScreenArguments(id: statusId, username: username));
       return;
     }
 
@@ -176,78 +185,156 @@ class _HomeScreenState extends State<_HomeScreen> {
     if (!_firstInit) {
       _firstInit = true;
       WidgetsBinding.instance.addPostFrameCallback((_) async {
-        // Announcement of the ability to use regular accounts and also have restricted unauthenticated access.
-        // The dialog of information is displayed once.
-        await TwitterAccount.announcementRegularAccountAndUnauthenticatedAccess(context);
-
-        ReceiveSharingIntent.instance.getInitialMedia().then((List<SharedMediaFile> value) async {
-          if (value.isNotEmpty) {
-            log.info('****** ReceiveSharingIntent.getInitialText - value=${value[0].path}');
-            Uri? link = Uri.tryParse(value[0].path);
-            if (link != null) {
-              await handleInitialLink(link);
-            }
-          }
-        });
-        // Attach a listener to the stream
-        _sub = ReceiveSharingIntent.instance.getMediaStream().listen((List<SharedMediaFile> value) async {
-          if (value.isNotEmpty) {
-            log.info('****** ReceiveSharingIntent.getTextStream - value=${value[0].path}');
-            Uri? link = Uri.tryParse(value[0].path);
-            if (link != null) {
-              await handleInitialLink(link);
-            }
-          }
-        }, onError: (err) {
-          // TODO: Handle exception by warning the user their action did not succeed
-          log.info('****** ReceiveSharingIntent.getTextStream - err=$err');
-        });
+        await _initializeAfterBuild(context);
       });
     }
     return ScopedBuilder<HomeModel, List<HomePage>>.transition(
-        store: widget.model,
-        onError: (_, e) => ScaffoldErrorWidget(
-              prefix: L10n.current.unable_to_load_home_pages,
-              error: e,
-              stackTrace: null,
-              onRetry: () async => await widget.model.resetPages(),
-              retryText: L10n.current.reset_home_pages,
-            ),
-        onLoading: (_) => const Center(child: CircularProgressIndicator()),
-        onState: (_, state) {
-          return ScaffoldWithBottomNavigation(
-              key: _navigationKey,
-              pages: _pages,
-              initialPage: _initialPage,
-              builder: (scrollController) {
-                return [
-                  ..._pages.map((e) {
-                    if (e.id.startsWith('group-')) {
-                      return FeedScreen(
-                          scrollController: scrollController,
-                          id: e.id.replaceAll('group-', ''),
-                          name: e.titleBuilder(context));
-                    }
+      store: widget.model,
+      onError: (_, e) => ScaffoldErrorWidget(
+        prefix: L10n.current.unable_to_load_home_pages,
+        error: e,
+        stackTrace: null,
+        onRetry: () async => await widget.model.resetPages(),
+        retryText: L10n.current.reset_home_pages,
+      ),
+      onLoading: (_) => const Center(child: CircularProgressIndicator()),
+      onState: (_, state) {
+        return ScaffoldWithBottomNavigation(
+          key: _navigationKey,
+          pages: _pages,
+          initialPage: _initialPage,
+          builder: (scrollController) {
+            return [
+              ..._pages.map((e) {
+                if (e.id.startsWith('group-')) {
+                  return FeedScreen(
+                    scrollController: scrollController,
+                    id: e.id.replaceAll('group-', ''),
+                    name: e.titleBuilder(context),
+                  );
+                }
 
-                    switch (e.id) {
-                      case 'feed':
-                        return FeedScreen(key: _feedKey, scrollController: scrollController, id: '-1', name: L10n.current.feed);
-                      case 'subscriptions':
-                        return SubscriptionsScreen();
-                      case 'groups':
-                        return GroupsScreen(scrollController: scrollController);
-                      case 'trending':
-                        return TrendsScreen();
-                      case 'saved':
-                        return SavedScreen();
-                      default:
-                        return const MissingScreen();
-                    }
-                  })
-                ];
-              },
-              feedKey: _feedKey);
+                switch (e.id) {
+                  case 'feed':
+                    return FeedScreen(
+                      key: _feedKey,
+                      scrollController: scrollController,
+                      id: '-1',
+                      name: L10n.current.feed,
+                    );
+                  case 'subscriptions':
+                    return const SubscriptionsScreen();
+                  case 'groups':
+                    return GroupsScreen(scrollController: scrollController);
+                  case 'trending':
+                    return const TrendsScreen();
+                  case 'saved':
+                    return const SavedScreen();
+                  default:
+                    return const MissingScreen();
+                }
+              }),
+            ];
+          },
+          feedKey: _feedKey,
+        );
+      },
+    );
+  }
+
+  Future<void> _initializeAfterBuild(BuildContext context) async {
+    // Check if the widget is still mounted before proceeding
+    if (!mounted) return;
+
+    // Announcement of the ability to use regular accounts and also have restricted unauthenticated access.
+    // The dialog of information is displayed once.
+    await TwitterAccount.announcementRegularAccountAndUnauthenticatedAccess(context);
+
+    // Check if the widget is still mounted before proceeding
+    if (!mounted) return;
+
+    // Handle initial media directly without passing context to helper methods
+    _handleInitialMediaDirectly();
+
+    // Attach a listener to the stream
+    _sub = ReceiveSharingIntent.instance.getMediaStream().listen(
+      (List<SharedMediaFile> value) {
+        _handleMediaStream(value);
+      },
+      onError: (err) {
+        _handleMediaStreamError(err);
+      },
+    );
+  }
+
+  void _handleInitialMediaDirectly() {
+    ReceiveSharingIntent.instance
+        .getInitialMedia()
+        .then((List<SharedMediaFile> value) async {
+          if (!mounted) return;
+          if (value.isNotEmpty) {
+            log.info('****** ReceiveSharingIntent.getInitialText - value=${value[0].path}');
+            Uri? link = Uri.tryParse(value[0].path);
+            if (link != null && mounted) {
+              // Instead of passing context, we'll use a helper that doesn't require context
+              await _handleLink(link);
+            }
+          }
+        })
+        .catchError((err) {
+          if (mounted) {
+            log.info('****** ReceiveSharingIntent.getInitialMedia - err=$err');
+            // Show a snackbar to inform the user about the error
+            // We need to check if context is still valid
+            if (mounted) {
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (mounted && context.mounted) {
+                  final l10n = L10n.of(context);
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.unable_to_load_the_tweets)));
+                }
+              });
+            }
+          }
         });
+  }
+
+  void _handleMediaStream(List<SharedMediaFile> value) {
+    if (!mounted) return;
+    if (value.isNotEmpty) {
+      log.info('****** ReceiveSharingIntent.getTextStream - value=${value[0].path}');
+      Uri? link = Uri.tryParse(value[0].path);
+      if (link != null && mounted) {
+        // Run this in a separate async task to avoid blocking the stream listener
+        WidgetsBinding.instance.addPostFrameCallback((_) async {
+          if (mounted) {
+            await _handleLink(link);
+          }
+        });
+      }
+    }
+  }
+
+  void _handleMediaStreamError(Object err) {
+    if (!mounted) return;
+    log.info('****** ReceiveSharingIntent.getTextStream - err=$err');
+    // Show a snackbar to inform the user about the error
+    // We need to check if context is still valid
+    if (mounted) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && context.mounted) {
+          final l10n = L10n.of(context);
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.unable_to_load_the_tweets)));
+        }
+      });
+    }
+  }
+
+  Future<void> _handleLink(Uri link) async {
+    // Check if the widget is still mounted before proceeding
+    if (!mounted) return;
+
+    // Call handleInitialLink with the current context
+    await handleInitialLink(context, link);
   }
 
   @override
@@ -260,7 +347,10 @@ class _HomeScreenState extends State<_HomeScreen> {
     http.Request req = http.Request('Get', link)..followRedirects = false;
     http.StreamedResponse response = await AppHttpClient.httpSend(req);
     String? location = response.headers['location'];
-    return location == null ? link : Uri.parse(location);
+    if (location == null) {
+      throw Exception('No location header found in response');
+    }
+    return Uri.parse(location);
   }
 }
 
@@ -270,8 +360,13 @@ class ScaffoldWithBottomNavigation extends StatefulWidget {
   final List<Widget> Function(ScrollController scrollController) builder;
   final GlobalKey<FeedScreenState>? feedKey;
 
-  const ScaffoldWithBottomNavigation({Key? key, required this.pages, required this.initialPage, required this.builder, required this.feedKey})
-      : super(key: key);
+  const ScaffoldWithBottomNavigation({
+    super.key,
+    required this.pages,
+    required this.initialPage,
+    required this.builder,
+    required this.feedKey,
+  });
 
   @override
   State<ScaffoldWithBottomNavigation> createState() => ScaffoldWithBottomNavigationState();
@@ -311,9 +406,11 @@ class ScaffoldWithBottomNavigationState extends State<ScaffoldWithBottomNavigati
   List<NavigationPage> _padToMinimumPagesLength(List<NavigationPage> pages) {
     var widgetPages = pages;
     if (widgetPages.length < 2) {
-      widgetPages.addAll(List.generate(2 - widgetPages.length, (index) {
-        return NavigationPage('none', (context) => L10n.current.missing_page, Icons.disabled_by_default_rounded);
-      }));
+      widgetPages.addAll(
+        List.generate(2 - widgetPages.length, (index) {
+          return NavigationPage('none', (context) => L10n.current.missing_page, Icons.disabled_by_default_rounded);
+        }),
+      );
     }
 
     return widgetPages;
@@ -340,18 +437,34 @@ class ScaffoldWithBottomNavigationState extends State<ScaffoldWithBottomNavigati
 
   @override
   Widget build(BuildContext context) {
-    bool themeTrueBlack = PrefService.of(context).get(optionThemeTrueBlack);
-    bool showTabLabels = PrefService.of(context).get(optionHomeShowTabLabels);
-    bool navigationAnimations = PrefService.of(context).get(optionNavigationAnimations);
+    // Capture all context-dependent values at the beginning to avoid async gap issues
+    final bool themeIsDark = Theme.of(context).brightness == Brightness.dark;
+    final bool themeTrueBlack = PrefService.of(context).get(optionThemeTrueBlack);
+    final bool showTabLabels = PrefService.of(context).get(optionHomeShowTabLabels);
+    final double navigationBarHeight = showTabLabels ? 70 : 40;
+    final NavigationDestinationLabelBehavior labelBehavior = showTabLabels
+        ? NavigationDestinationLabelBehavior.alwaysShow
+        : NavigationDestinationLabelBehavior.alwaysHide;
+
+    // Capture page titles to avoid using context in the destinations loop
+    final List<String> pageTitles = _pages.map((e) => e.titleBuilder(context)).toList();
+
     if (_goToSubscriptions) {
       _goToSubscriptions = false;
+      // Capture the needed values before the async gap
+      int subscriptionsIndex = widget.pages.indexWhere((e) => e.id == 'subscriptions');
+      bool navigationAnimations = PrefService.of(context).get(optionNavigationAnimations);
+
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        int idx = widget.pages.indexWhere((e) => e.id == 'subscriptions');
+        if (!mounted) return;
         if (navigationAnimations) {
-          _pageController?.animateToPage(idx, curve: Curves.easeInOut, duration: const Duration(milliseconds: 100));
-        }
-        else {
-          _pageController?.jumpToPage(idx);
+          _pageController?.animateToPage(
+            subscriptionsIndex,
+            curve: Curves.easeInOut,
+            duration: const Duration(milliseconds: 100),
+          );
+        } else {
+          _pageController?.jumpToPage(subscriptionsIndex);
         }
       });
     }
@@ -359,41 +472,52 @@ class ScaffoldWithBottomNavigationState extends State<ScaffoldWithBottomNavigati
       body: PageView(
         controller: _pageController,
         physics: const LessSensitiveScrollPhysics(),
-        onPageChanged: (page) => navigationAnimations
-          ? Debouncer.debounce('page-change', const Duration(milliseconds: 200), () {
-            setState(() => _selectedIndex = page);
-          })
-          : setState(() => _selectedIndex = page),
+        onPageChanged: (page) {
+          // Capture the value before potential async operations
+          final bool navigationAnimations = PrefService.of(context).get(optionNavigationAnimations);
+          return navigationAnimations
+              ? Debouncer.debounce('page-change', const Duration(milliseconds: 200), () {
+                  if (mounted) {
+                    setState(() => _selectedIndex = page);
+                  }
+                })
+              : setState(() => _selectedIndex = page);
+        },
         children: _children,
       ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _selectedIndex,
-        surfaceTintColor: Theme.of(context).brightness == Brightness.dark && themeTrueBlack ? Colors.black : null,
-        backgroundColor: Theme.of(context).brightness == Brightness.dark && themeTrueBlack ? Colors.black : null,
-        indicatorColor: Theme.of(context).brightness == Brightness.dark && themeTrueBlack ? Colors.black : null,
-        labelBehavior: showTabLabels
-          ? NavigationDestinationLabelBehavior.alwaysShow
-          : NavigationDestinationLabelBehavior.alwaysHide,
-        height: PrefService.of(context).get(optionHomeShowTabLabels) ? 70 : 40,
+        surfaceTintColor: themeIsDark && themeTrueBlack ? Colors.black : null,
+        backgroundColor: themeIsDark && themeTrueBlack ? Colors.black : null,
+        indicatorColor: themeIsDark && themeTrueBlack ? Colors.black : null,
+        labelBehavior: labelBehavior,
+        height: navigationBarHeight,
         destinations: [
-          ..._pages.map((e) => DefaultTextStyle.merge(
-            style: NavigationBarTheme.of(context).labelTextStyle?.resolve(e.id == _pages[_selectedIndex].id ? <MaterialState>{MaterialState.selected} : <MaterialState>{}),
-            overflow: TextOverflow.clip,
-            maxLines: 1,
-            child: NavigationDestination(selectedIcon: Icon(e.icon, size: 22, fill: 1), icon: Icon(e.icon, size: 22), label: e.titleBuilder(context))
-          ))
+          for (int i = 0; i < _pages.length; i++)
+            NavigationDestination(
+              selectedIcon: Icon(_pages[i].icon, size: 22, fill: 1),
+              icon: Icon(_pages[i].icon, size: 22),
+              label: pageTitles[i],
+            ),
         ],
         onDestinationSelected: (int value) async {
+          // Capture all context-dependent values before potential async operations
+          final bool navigationAnimations = PrefService.of(context).get(optionNavigationAnimations);
+
           if (_children[value] is FeedScreen && widget.feedKey != null && widget.feedKey!.currentState != null) {
             await widget.feedKey!.currentState!.checkUpdateOrRefreshFeed();
           }
+
           if (navigationAnimations) {
-            _pageController?.animateToPage(value, duration: const Duration(milliseconds: 200), curve: Curves.linear);
+            if (mounted) {
+              _pageController?.animateToPage(value, duration: const Duration(milliseconds: 200), curve: Curves.linear);
+            }
+          } else {
+            if (mounted) {
+              _pageController?.jumpToPage(value);
+            }
           }
-          else {
-            _pageController?.jumpToPage(value);
-          }
-        }
+        },
       ),
     );
   }

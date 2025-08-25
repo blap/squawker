@@ -1,10 +1,11 @@
+import 'dart:io';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
-
 
 import 'package:dart_twitter_api/twitter_api.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:squawker/client/client.dart';
 import 'package:squawker/constants.dart';
 import 'package:squawker/generated/l10n.dart';
@@ -45,18 +46,18 @@ class TweetTile extends StatefulWidget {
   final int? tweetIdx;
   final VisiblePositionState? visiblePositionState;
 
-  const TweetTile(
-      {Key? key,
-      this.conversationId,
-      required this.clickable,
-      this.currentUsername,
-      required this.tweet,
-      this.isPinned = false,
-      this.isThread = false,
-      this.isBirdwatchQuote = false,
-      this.tweetIdx,
-      this.visiblePositionState})
-      : super(key: key);
+  const TweetTile({
+    super.key,
+    this.conversationId,
+    required this.clickable,
+    this.currentUsername,
+    required this.tweet,
+    this.isPinned = false,
+    this.isThread = false,
+    this.isBirdwatchQuote = false,
+    this.tweetIdx,
+    this.visiblePositionState,
+  });
 
   @override
   TweetTileState createState() => TweetTileState();
@@ -91,8 +92,11 @@ class TweetTileState extends State<TweetTile> with SingleTickerProviderStateMixi
     return HtmlUnescape().convert(string);
   }
 
-  static List<TweetEntity> _populateEntities(
-      {required List<TweetEntity> entities, List<dynamic>? source, required Function getNewEntity}) {
+  static List<TweetEntity> _populateEntities({
+    required List<TweetEntity> entities,
+    List<dynamic>? source,
+    required Function getNewEntity,
+  }) {
     source = source ?? [];
 
     for (dynamic newEntity in source) {
@@ -106,42 +110,53 @@ class TweetTileState extends State<TweetTile> with SingleTickerProviderStateMixi
     List<TweetEntity> entities = [];
 
     entities = _populateEntities(
-        entities: entities,
-        source: tweet.entities?.hashtags,
-        getNewEntity: (Hashtag hashtag) {
-          return TweetHashtag(
-              hashtag,
-              () => pushNamedRoute(context, routeSearch, SearchArguments(1, focusInputOnOpen: false, query: '#${hashtag.text}')));
-        });
+      entities: entities,
+      source: tweet.entities?.hashtags,
+      getNewEntity: (Hashtag hashtag) {
+        return TweetHashtag(hashtag, () => _navigateToSearch(context, '#${hashtag.text}'));
+      },
+    );
 
     entities = _populateEntities(
-        entities: entities,
-        source: tweet.entities?.userMentions,
-        getNewEntity: (UserMention mention) {
-          return TweetUserMention(mention, () {
-            pushNamedRoute(context, routeProfile, ProfileScreenArguments(mention.idStr, mention.screenName));
-          });
+      entities: entities,
+      source: tweet.entities?.userMentions,
+      getNewEntity: (UserMention mention) {
+        return TweetUserMention(mention, () {
+          _navigateToProfile(context, mention.idStr, mention.screenName);
         });
+      },
+    );
 
     entities = _populateEntities(
-        entities: entities,
-        source: tweet.entities?.urls,
-        getNewEntity: (Url url) {
-          return TweetUrl(url, () async {
-            String? uri = url.expandedUrl;
-            if (uri == null ||
-                (uri.length > 27 && uri.toLowerCase().substring(0, 27) == 'https://x.com/i/web/status/') ||
-                (uri.length > 33 && uri.toLowerCase().substring(0, 33) == 'https://twitter.com/i/web/status/')) {
-              return;
-            }
+      entities: entities,
+      source: tweet.entities?.urls,
+      getNewEntity: (Url url) {
+        return TweetUrl(url, () async {
+          String? uri = url.expandedUrl;
+          if (uri == null ||
+              (uri.length > 27 && uri.toLowerCase().substring(0, 27) == 'https://x.com/i/web/status/') ||
+              (uri.length > 33 && uri.toLowerCase().substring(0, 33) == 'https://twitter.com/i/web/status/')) {
+            return;
+          }
 
-            await openUri(uri);
-          });
+          await openUri(uri);
         });
+      },
+    );
 
     entities.sort((a, b) => a.getEntityStart().compareTo(b.getEntityStart()));
 
     return entities;
+  }
+
+  static void _navigateToSearch(BuildContext context, String query) {
+    if (!context.mounted) return;
+    pushNamedRoute(context, routeSearch, SearchArguments(1, focusInputOnOpen: false, query: query));
+  }
+
+  static void _navigateToProfile(BuildContext context, String? idStr, String? screenName) {
+    if (!context.mounted) return;
+    pushNamedRoute(context, routeProfile, ProfileScreenArguments(idStr, screenName));
   }
 
   Future<void> onClickTranslate() async {
@@ -157,6 +172,9 @@ class TweetTileState extends State<TweetTile> with SingleTickerProviderStateMixi
       _translationStatus = TranslationStatus.translating;
     });
 
+    // Capture the locale before the async gap to avoid BuildContext issues
+    final targetLanguageCode = Localizations.localeOf(context).languageCode;
+
     try {
       var systemLocale = getShortSystemLocale();
 
@@ -168,12 +186,23 @@ class TweetTileState extends State<TweetTile> with SingleTickerProviderStateMixi
       log.severe('Unable to list the supported languages');
 
       return showTranslationError(
-          'Failed to get the list of supported languages. Please check your connection, or try again later!');
+        'Failed to get the list of supported languages. Please check your connection, or try again later!',
+      );
     }
+
+    // Capture the rest of the values before the async gap to avoid BuildContext issues
+    final sourceLanguage = tweet.lang ?? "";
+    final hasTextOrNot = _originalParts.map((e) => e.toString().isNotEmpty ? true : false).toList();
 
     var originalText = _originalParts.map((e) => e.toString()).toList();
 
-    var res = await TranslationAPI.translate(context, tweet.idStr!, originalText, tweet.lang ?? "");
+    var res = await TranslationAPI.translateWithLocale(
+      tweet.idStr!,
+      originalText,
+      sourceLanguage,
+      targetLanguageCode,
+      hasTextOrNot,
+    );
     if (res.success) {
       var translatedParts = convertTextPartsToTweetEntities(List.from(res.body['translatedText']));
 
@@ -193,6 +222,7 @@ class TweetTileState extends State<TweetTile> with SingleTickerProviderStateMixi
       _translationStatus = TranslationStatus.translationFailed;
     });
 
+    if (!mounted) return;
     showSnackBar(context, icon: '💥', message: message);
   }
 
@@ -286,8 +316,7 @@ class TweetTileState extends State<TweetTile> with SingleTickerProviderStateMixi
         if (urlEnt.url.expandedUrl == null || !_isTwitterUrl(urlEnt.url.expandedUrl!)) {
           addPartContent = true;
         }
-      }
-      else {
+      } else {
         addPartContent = true;
       }
       if (addPartContent) {
@@ -316,26 +345,23 @@ class TweetTileState extends State<TweetTile> with SingleTickerProviderStateMixi
     'twimg.com',
     'abs.twimg.com',
     'pbs.twimg.com',
-    'video.twimg.com'
+    'video.twimg.com',
   ];
 
   bool _isTwitterUrl(String url) {
     return _twitterUrls.firstWhereOrNull((elm) => url.startsWith('https://$elm/')) != null;
   }
 
-  _createFooterIconButton(IconData icon, [Color? color, double? fill, Function()? onPressed]) {
+  IconButton _createFooterIconButton(IconData icon, [Color? color, double? fill, Function()? onPressed]) {
     return IconButton(
-      icon: Icon(
-        icon,
-        fill: fill,
-      ),
+      icon: Icon(icon, fill: fill),
       color: color ?? Theme.of(context).colorScheme.primary,
       iconSize: 18,
       onPressed: onPressed,
     );
   }
 
-  _createFooterTextButton(IconData icon, String label, [Color? color, Function()? onPressed]) {
+  TextButton _createFooterTextButton(IconData icon, String label, [Color? color, Function()? onPressed]) {
     return TextButton.icon(
       icon: Icon(icon, size: 18, color: color),
       onPressed: onPressed,
@@ -370,8 +396,9 @@ class TweetTileState extends State<TweetTile> with SingleTickerProviderStateMixi
         prefs.get<int>(optionTweetFontSize)?.toDouble() ?? DefaultTextStyle.of(context).style.fontSize!;
 
     var shareBaseUrlOption = prefs.get(optionShareBaseUrl);
-    var shareBaseUrl =
-        shareBaseUrlOption != null && shareBaseUrlOption.isNotEmpty ? shareBaseUrlOption : 'https://x.com';
+    var shareBaseUrl = shareBaseUrlOption != null && shareBaseUrlOption.isNotEmpty
+        ? shareBaseUrlOption
+        : 'https://x.com';
 
     TweetWithCard tweet = this.tweet.retweetedStatusWithCard == null ? this.tweet : this.tweet.retweetedStatusWithCard!;
 
@@ -384,24 +411,28 @@ class TweetTileState extends State<TweetTile> with SingleTickerProviderStateMixi
 
     if (tweet.isTombstone ?? false) {
       return VisibilityDetector(
-          key: UniqueKey(),
-          onVisibilityChanged: (visibilityInfo) {
-            if (visibilityInfo.visibleFraction > 0) {
-              if (widget.visiblePositionState != null) {
-                widget.visiblePositionState!.positionChanged(widget.conversationId, this.tweet.idStr, widget.tweetIdx);
-              }
+        key: UniqueKey(),
+        onVisibilityChanged: (visibilityInfo) {
+          if (visibilityInfo.visibleFraction > 0) {
+            if (widget.visiblePositionState != null) {
+              widget.visiblePositionState!.positionChanged(widget.conversationId, this.tweet.idStr, widget.tweetIdx);
             }
-          },
-          child: SizedBox(
-            width: double.infinity,
-            child: Card(
-              child: Container(
-                  padding: const EdgeInsets.all(16),
-                  child: SelectableText(tweet.text!,
-                      style: TextStyle(fontStyle: FontStyle.italic, fontSize: optionTweetFontSizeValue),
-                      contextMenuBuilder: _contextMenuBuilder)),
+          }
+        },
+        child: SizedBox(
+          width: double.infinity,
+          child: Card(
+            child: Container(
+              padding: const EdgeInsets.all(16),
+              child: SelectableText(
+                tweet.text!,
+                style: TextStyle(fontStyle: FontStyle.italic, fontSize: optionTweetFontSizeValue),
+                contextMenuBuilder: _contextMenuBuilder,
+              ),
             ),
-          ));
+          ),
+        ),
+      );
     }
 
     Widget media = Container();
@@ -418,12 +449,15 @@ class TweetTileState extends State<TweetTile> with SingleTickerProviderStateMixi
     if (this.tweet.retweetedStatusWithCard != null) {
       retweetBanner = _TweetTileLeading(
         icon: Icons.repeat,
-        onTap: () => pushNamedRoute(context, routeProfile, ProfileScreenArguments.fromScreenName(this.tweet.user!.screenName!)),
+        onTap: () =>
+            pushNamedRoute(context, routeProfile, ProfileScreenArguments.fromScreenName(this.tweet.user!.screenName!)),
         children: [
           TextSpan(
-              text: L10n.of(context)
-                  .this_tweet_user_name_retweeted(this.tweet.user!.name!, createRelativeDate(this.tweet.createdAt!)),
-              style: theme.textTheme.bodySmall)
+            text: L10n.of(
+              context,
+            ).this_tweet_user_name_retweeted(this.tweet.user!.name!, createRelativeDate(this.tweet.createdAt!)),
+            style: theme.textTheme.bodySmall,
+          ),
         ],
       );
 
@@ -438,11 +472,9 @@ class TweetTileState extends State<TweetTile> with SingleTickerProviderStateMixi
           var replyToId = tweet.inReplyToStatusIdStr;
           if (replyToId == null) {
             ScaffoldMessenger.of(context).clearSnackBars();
-            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-              content: Text(
-                L10n.of(context).sorry_the_replied_tweet_could_not_be_found,
-              ),
-            ));
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(SnackBar(content: Text(L10n.of(context).sorry_the_replied_tweet_could_not_be_found)));
           } else {
             pushNamedRoute(context, routeStatus, StatusScreenArguments(id: replyToId, username: replyTo));
           }
@@ -450,7 +482,10 @@ class TweetTileState extends State<TweetTile> with SingleTickerProviderStateMixi
         icon: Icons.reply_rounded,
         children: [
           TextSpan(text: '${L10n.of(context).replying_to} ', style: theme.textTheme.bodySmall),
-          TextSpan(text: '@$replyTo', style: theme.textTheme.bodySmall!.copyWith(fontWeight: FontWeight.bold)),
+          TextSpan(
+            text: '@$replyTo',
+            style: theme.textTheme.bodySmall!.copyWith(fontWeight: FontWeight.bold),
+          ),
         ],
       );
     }
@@ -458,16 +493,19 @@ class TweetTileState extends State<TweetTile> with SingleTickerProviderStateMixi
     var tweetText = tweet.fullText ?? tweet.text;
     if (tweetText == null) {
       return VisibilityDetector(
-          key: UniqueKey(),
-          onVisibilityChanged: (visibilityInfo) {
-            if (visibilityInfo.visibleFraction > 0) {
-              if (widget.visiblePositionState != null) {
-                widget.visiblePositionState!.positionChanged(widget.conversationId, this.tweet.idStr, widget.tweetIdx);
-              }
+        key: UniqueKey(),
+        onVisibilityChanged: (visibilityInfo) {
+          if (visibilityInfo.visibleFraction > 0) {
+            if (widget.visiblePositionState != null) {
+              widget.visiblePositionState!.positionChanged(widget.conversationId, this.tweet.idStr, widget.tweetIdx);
             }
-          },
-          child: Text(L10n.of(context).the_tweet_did_not_contain_any_text_this_is_unexpected,
-              style: TextStyle(fontSize: optionTweetFontSizeValue)));
+          }
+        },
+        child: Text(
+          L10n.of(context).the_tweet_did_not_contain_any_text_this_is_unexpected,
+          style: TextStyle(fontSize: optionTweetFontSizeValue),
+        ),
+      );
     }
 
     if (isBirdwatchQuote) {
@@ -478,40 +516,51 @@ class TweetTileState extends State<TweetTile> with SingleTickerProviderStateMixi
           padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
           child: Column(
             children: [
-              _TweetTileLeading(icon: Icons.group_rounded, children: [
-                TextSpan(
-                  text: L10n.of(context).community_notes_title,
-                  style: TextStyle(color: theme.textTheme.bodySmall!.color, fontSize: theme.textTheme.bodySmall!.fontSize, fontWeight: ui.FontWeight.bold),
-                )
-              ]),
+              _TweetTileLeading(
+                icon: Icons.group_rounded,
+                children: [
+                  TextSpan(
+                    text: L10n.of(context).community_notes_title,
+                    style: TextStyle(
+                      color: theme.textTheme.bodySmall!.color,
+                      fontSize: theme.textTheme.bodySmall!.fontSize,
+                      fontWeight: ui.FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
               const SizedBox(height: 8),
               Text.rich(
-                  TextSpan(children: [
-                  ..._displayParts.map((e) {
-                    if (e.plainText != null) {
-                      return TextSpan(text: e.plainText, style: TextStyle(fontSize: optionTweetFontSizeValue));
-                    }
-                    else {
-                      return e.entity!;
-                    }
-                  })]),
-                )
-            ]
-          )
-        )
+                TextSpan(
+                  children: [
+                    ..._displayParts.map((e) {
+                      if (e.plainText != null) {
+                        return TextSpan(
+                          text: e.plainText,
+                          style: TextStyle(fontSize: optionTweetFontSizeValue),
+                        );
+                      } else {
+                        return e.entity!;
+                      }
+                    }),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
       );
     }
 
     var birdwatchQuoted = Container();
     if (tweet.birdwatchQuotedStatus != null) {
       birdwatchQuoted = Container(
-        decoration: BoxDecoration(border: Border.all(color: theme.primaryColor), borderRadius: BorderRadius.circular(8)),
-        margin: const EdgeInsets.all(8),
-        child: TweetTile(
-          clickable: false,
-          tweet: tweet.birdwatchQuotedStatus!,
-          isBirdwatchQuote: true,
+        decoration: BoxDecoration(
+          border: Border.all(color: theme.primaryColor),
+          borderRadius: BorderRadius.circular(8),
         ),
+        margin: const EdgeInsets.all(8),
+        child: TweetTile(clickable: false, tweet: tweet.birdwatchQuotedStatus!, isBirdwatchQuote: true),
       );
     }
 
@@ -520,14 +569,12 @@ class TweetTileState extends State<TweetTile> with SingleTickerProviderStateMixi
     if (tweet.isQuoteStatus ?? false) {
       if (tweet.quotedStatusWithCard != null) {
         quotedTweet = Container(
-          decoration:
-              BoxDecoration(border: Border.all(color: theme.primaryColor), borderRadius: BorderRadius.circular(8)),
-          margin: const EdgeInsets.all(8),
-          child: TweetTile(
-            clickable: true,
-            tweet: tweet.quotedStatusWithCard!,
-            currentUsername: currentUsername,
+          decoration: BoxDecoration(
+            border: Border.all(color: theme.primaryColor),
+            borderRadius: BorderRadius.circular(8),
           ),
+          margin: const EdgeInsets.all(8),
+          child: TweetTile(clickable: true, tweet: tweet.quotedStatusWithCard!, currentUsername: currentUsername),
         );
       }
     }
@@ -540,27 +587,36 @@ class TweetTileState extends State<TweetTile> with SingleTickerProviderStateMixi
         // Fill the width so both RTL and LTR text are displayed correctly
         width: double.infinity,
         padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-        child:             SelectableText.rich(
-              TextSpan(children: [
-                ..._displayParts.map((e) {
-                  if (e.plainText != null) {
-                    return TextSpan(text: e.plainText, style: TextStyle(fontSize: optionTweetFontSizeValue));
-                  } else {
-                    return e.entity!;
-                  }
-                })
-              ]),
-              onTap: () => onClickOpenTweet(tweet),
-              contextMenuBuilder: _contextMenuBuilder,
-            )
+        child: SelectableText.rich(
+          TextSpan(
+            children: [
+              ..._displayParts.map((e) {
+                if (e.plainText != null) {
+                  return TextSpan(
+                    text: e.plainText,
+                    style: TextStyle(fontSize: optionTweetFontSizeValue),
+                  );
+                } else {
+                  return e.entity!;
+                }
+              }),
+            ],
+          ),
+          onTap: () => onClickOpenTweet(tweet),
+          contextMenuBuilder: _contextMenuBuilder,
+        ),
       );
     }
 
     Widget translateButton;
     switch (_translationStatus) {
       case TranslationStatus.original:
-        translateButton =
-            _createFooterIconButton(Icons.translate_rounded, Colors.blue, null, () async => onClickTranslate());
+        translateButton = _createFooterIconButton(
+          Icons.translate_rounded,
+          Colors.blue,
+          null,
+          () async => onClickTranslate(),
+        );
         break;
       case TranslationStatus.translating:
         translateButton = const Padding(
@@ -569,12 +625,20 @@ class TweetTileState extends State<TweetTile> with SingleTickerProviderStateMixi
         );
         break;
       case TranslationStatus.translationFailed:
-        translateButton =
-            _createFooterIconButton(Icons.translate_rounded, Colors.red, null, () async => onClickTranslate());
+        translateButton = _createFooterIconButton(
+          Icons.translate_rounded,
+          Colors.red,
+          null,
+          () async => onClickTranslate(),
+        );
         break;
       case TranslationStatus.translated:
-        translateButton =
-            _createFooterIconButton(Icons.translate_rounded, Colors.green, null, () async => onClickShowOriginal());
+        translateButton = _createFooterIconButton(
+          Icons.translate_rounded,
+          Colors.green,
+          null,
+          () async => onClickShowOriginal(),
+        );
         break;
     }
 
@@ -596,194 +660,233 @@ class TweetTileState extends State<TweetTile> with SingleTickerProviderStateMixi
         builder: (context, model, child) => RepaintBoundary(
           key: _globalKey,
           child: Card(
-            color: theme.brightness == Brightness.dark && prefs.get(optionThemeTrueBlack)
-              ? Colors.black
-              : null,
+            color: theme.brightness == Brightness.dark && prefs.get(optionThemeTrueBlack) ? Colors.black : null,
             surfaceTintColor: theme.brightness == Brightness.dark && prefs.get(optionThemeTrueBlack)
-              ? Colors.black
-              : null,
+                ? Colors.black
+                : null,
             child: Row(
               children: [
                 retweetSidebar,
-                Expanded(child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    retweetBanner,
-                    replyToTile,
-                    if (isPinned)
-                      _TweetTileLeading(icon: Icons.push_pin_rounded, children: [
-                        TextSpan(
-                          text: L10n.of(context).pinned_tweet,
-                          style: theme.textTheme.bodySmall,
-                        )
-                      ]),
-                    if (isThread)
-                      _TweetTileLeading(icon: Icons.forum_rounded, children: [
-                        TextSpan(
-                          text: L10n.of(context).thread,
-                          style: theme.textTheme.bodySmall,
-                        )
-                      ]),
-                    ListTile(
-                      onTap: () {
-                        // If the tweet is by the currently-viewed profile, don't allow clicks as it doesn't make sense
-                        if (currentUsername != null && tweet.user!.screenName!.endsWith(currentUsername!)) {
-                          return;
-                        }
-                        pushNamedRoute(context, routeProfile, ProfileScreenArguments(tweet.user!.idStr, tweet.user!.screenName));
-                      },
-                      title: Row(
-                        children: [
-                          // Username
-                          if (!hideAuthorInformation)
-                            Flexible(
-                              child: Row(
-                                children: [
-                                  Flexible(
-                                      child: Text(tweet.user!.name!,
-                                          overflow: TextOverflow.ellipsis,
-                                          style: const TextStyle(fontWeight: FontWeight.w500))),
-                                  if (tweet.user!.verified ?? false) const SizedBox(width: 4),
-                                  if (tweet.user!.verified ?? false)
-                                    Icon(Icons.verified, size: 18, color: Theme.of(context).primaryColor)
-                                ],
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      retweetBanner,
+                      replyToTile,
+                      if (isPinned)
+                        _TweetTileLeading(
+                          icon: Icons.push_pin_rounded,
+                          children: [TextSpan(text: L10n.of(context).pinned_tweet, style: theme.textTheme.bodySmall)],
+                        ),
+                      if (isThread)
+                        _TweetTileLeading(
+                          icon: Icons.forum_rounded,
+                          children: [TextSpan(text: L10n.of(context).thread, style: theme.textTheme.bodySmall)],
+                        ),
+                      ListTile(
+                        onTap: () {
+                          // If the tweet is by the currently-viewed profile, don't allow clicks as it doesn't make sense
+                          if (currentUsername != null && tweet.user!.screenName!.endsWith(currentUsername!)) {
+                            return;
+                          }
+                          pushNamedRoute(
+                            context,
+                            routeProfile,
+                            ProfileScreenArguments(tweet.user!.idStr, tweet.user!.screenName),
+                          );
+                        },
+                        title: Row(
+                          children: [
+                            // Username
+                            if (!hideAuthorInformation)
+                              Flexible(
+                                child: Row(
+                                  children: [
+                                    Flexible(
+                                      child: Text(
+                                        tweet.user!.name!,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: const TextStyle(fontWeight: FontWeight.w500),
+                                      ),
+                                    ),
+                                    if (tweet.user!.verified ?? false) const SizedBox(width: 4),
+                                    if (tweet.user!.verified ?? false)
+                                      Icon(Icons.verified, size: 18, color: Theme.of(context).primaryColor),
+                                  ],
+                                ),
                               ),
-                            ),
-                          InkWell(
-                            child: const Icon(Icons.more_horiz),
-                            onTap: () async {
-                              createSheetButton(title, icon, onTap) => ListTile(
-                                    onTap: onTap,
-                                    leading: Icon(icon),
-                                    title: Text(title),
-                                  );
+                            InkWell(
+                              child: const Icon(Icons.more_horiz),
+                              onTap: () async {
+                                createSheetButton(title, icon, onTap) =>
+                                    ListTile(onTap: onTap, leading: Icon(icon), title: Text(title));
 
-                              showModalBottomSheet(
+                                showModalBottomSheet(
                                   context: context,
                                   builder: (context) {
                                     return SafeArea(
-                                        child: Column(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        createSheetButton(L10n.of(context).share_tweet_content, Icons.share,
+                                      child: Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          createSheetButton(
+                                            L10n.of(context).share_tweet_content,
+                                            Icons.share,
                                             () async {
-                                          Share.share(tweetText);
-                                          Navigator.pop(context);
-                                        }),
-                                        createSheetButton(L10n.of(context).share_tweet_link, Icons.share,
-                                            () async {
-                                          Share.share(
-                                              '$shareBaseUrl/${tweet.user!.screenName}/status/${tweet.idStr}');
-                                          Navigator.pop(context);
-                                        }),
-                                        createSheetButton(
-                                            L10n.of(context).share_tweet_content_and_link, Icons.share,
-                                            () async {
-                                          Share.share(
-                                              '$tweetText\n\n$shareBaseUrl/${tweet.user!.screenName}/status/${tweet.idStr}');
-                                          Navigator.pop(context);
-                                        }),
-                                        createSheetButton(L10n.of(context).share_tweet_as_image, Icons.share,
-                                            () async {
-                                          Uint8List? imgBytes = await captureWidget();
-                                          if (imgBytes != null) {
-                                            Share.shareXFiles([XFile.fromData(imgBytes, mimeType: 'image/png')]);
-                                          }
-                                          Navigator.pop(context);
-                                        }),
-                                        const Padding(
-                                          padding: EdgeInsets.symmetric(horizontal: 16),
-                                          child: Divider(
-                                            thickness: 1.0,
+                                              if (!context.mounted) return;
+                                              await SharePlus.instance.share(ShareParams(text: tweetText));
+                                              if (!context.mounted) return;
+                                              Navigator.pop(context);
+                                            },
                                           ),
-                                        ),
-                                        createSheetButton(L10n.of(context).cancel, Icons.close_rounded, () {
-                                          Navigator.pop(context);
-                                        })
-                                      ],
-                                    ));
-                                  });
-                            },
-                          )
-                        ],
-                      ),
-                      subtitle: Row(
-                        mainAxisAlignment: hideAuthorInformation ? MainAxisAlignment.end : MainAxisAlignment.spaceBetween,
-                        children: [
-                          // Twitter name
-                          if (!hideAuthorInformation) ...[
-                            Flexible(child: Text('@${tweet.user!.screenName!}', overflow: TextOverflow.ellipsis)),
-                            const SizedBox(width: 4),
+                                          createSheetButton(L10n.of(context).share_tweet_link, Icons.share, () async {
+                                            if (!context.mounted) return;
+                                            await SharePlus.instance.share(
+                                              ShareParams(
+                                                text: '$shareBaseUrl/${tweet.user!.screenName}/status/${tweet.idStr}',
+                                              ),
+                                            );
+                                            if (!context.mounted) return;
+                                            Navigator.pop(context);
+                                          }),
+                                          createSheetButton(
+                                            L10n.of(context).share_tweet_content_and_link,
+                                            Icons.share,
+                                            () async {
+                                              if (!context.mounted) return;
+                                              await SharePlus.instance.share(
+                                                ShareParams(
+                                                  text:
+                                                      '$tweetText\n\n$shareBaseUrl/${tweet.user!.screenName}/status/${tweet.idStr}',
+                                                ),
+                                              );
+                                              if (!context.mounted) return;
+                                              Navigator.pop(context);
+                                            },
+                                          ),
+                                          createSheetButton(
+                                            L10n.of(context).share_tweet_as_image,
+                                            Icons.share,
+                                            () async {
+                                              if (!context.mounted) return;
+                                              Uint8List? imgBytes = await captureWidget();
+                                              if (imgBytes != null) {
+                                                final tempDir = await getTemporaryDirectory();
+                                                final file = File('${tempDir.path}/tweet.png');
+                                                await file.writeAsBytes(imgBytes);
+                                                await SharePlus.instance.share(ShareParams(files: [XFile(file.path)]));
+                                                // Clean up the temporary file after sharing
+                                                file.delete();
+                                              }
+                                              if (!context.mounted) return;
+                                              Navigator.pop(context);
+                                            },
+                                          ),
+                                          const Padding(
+                                            padding: EdgeInsets.symmetric(horizontal: 16),
+                                            child: Divider(thickness: 1.0),
+                                          ),
+                                          createSheetButton(L10n.of(context).cancel, Icons.close_rounded, () {
+                                            Navigator.pop(context);
+                                          }),
+                                        ],
+                                      ),
+                                    );
+                                  },
+                                );
+                              },
+                            ),
                           ],
-                          if (createdAt != null)
-                            DefaultTextStyle(style: theme.textTheme.bodySmall!, child: Timestamp(timestamp: createdAt))
-                        ],
+                        ),
+                        subtitle: Row(
+                          mainAxisAlignment: hideAuthorInformation
+                              ? MainAxisAlignment.end
+                              : MainAxisAlignment.spaceBetween,
+                          children: [
+                            // Twitter name
+                            if (!hideAuthorInformation) ...[
+                              Flexible(child: Text('@${tweet.user!.screenName!}', overflow: TextOverflow.ellipsis)),
+                              const SizedBox(width: 4),
+                            ],
+                            if (createdAt != null)
+                              DefaultTextStyle(
+                                style: theme.textTheme.bodySmall!,
+                                child: Timestamp(timestamp: createdAt),
+                              ),
+                          ],
+                        ),
+                        // Profile picture
+                        leading: hideAuthorInformation
+                            ? const Icon(Icons.account_circle_rounded, size: 48)
+                            : ClipRRect(
+                                borderRadius: BorderRadius.circular(64),
+                                child: UserAvatar(uri: tweet.user!.profileImageUrlHttps),
+                              ),
                       ),
-                      // Profile picture
-                      leading: hideAuthorInformation
-                        ? const Icon(Icons.account_circle_rounded, size: 48)
-                        : ClipRRect(
-                            borderRadius: BorderRadius.circular(64),
-                            child: UserAvatar(uri: tweet.user!.profileImageUrlHttps),
-                          ),
-                    ),
-                    content,
-                    media,
-                    quotedTweet,
-                    TweetCard(tweet: tweet, card: tweet.card as Map<String, dynamic>?),
-                    birdwatchQuoted,
-                    Container(
-                      alignment: Alignment.center,
-                      margin: const EdgeInsets.symmetric(horizontal: 8),
-                      child: Scrollbar(
-                        child: SingleChildScrollView(
-                          scrollDirection: Axis.horizontal,
-                          child: Row(
-                            children: [
-                              _createFooterTextButton(
+                      content,
+                      media,
+                      quotedTweet,
+                      TweetCard(tweet: tweet, card: tweet.card),
+                      birdwatchQuoted,
+                      Container(
+                        alignment: Alignment.center,
+                        margin: const EdgeInsets.symmetric(horizontal: 8),
+                        child: Scrollbar(
+                          child: SingleChildScrollView(
+                            scrollDirection: Axis.horizontal,
+                            child: Row(
+                              children: [
+                                _createFooterTextButton(
                                   Icons.comment,
                                   tweet.replyCount != null ? numberFormat.format(tweet.replyCount) : '',
                                   null,
-                                  () => onClickOpenTweet(tweet)),
-                              if (tweet.retweetCount != null || tweet.quoteCount != null)
-                                _createFooterTextButton(Icons.repeat,
-                                    numberFormat.format((tweet.retweetCount ?? 0) + (tweet.quoteCount ?? 0))),
-                              if (tweet.favoriteCount != null)
-                                _createFooterTextButton(
-                                    Icons.favorite_border, numberFormat.format(tweet.favoriteCount)),
-                              const SizedBox(
-                                width: 8.0,
-                              ),
-                              Consumer<SavedTweetModel>(builder: (context, model, child) {
-                                var isSaved = model.isSaved(tweet.idStr!);
-                                if (isSaved) {
-                                  return _createFooterIconButton(Icons.bookmark, null, 1, () async {
-                                    await model.deleteSavedTweet(tweet.idStr!);
-                                    if (mounted) {
-                                      setState(() {});
+                                  () => onClickOpenTweet(tweet),
+                                ),
+                                if (tweet.retweetCount != null || tweet.quoteCount != null)
+                                  _createFooterTextButton(
+                                    Icons.repeat,
+                                    numberFormat.format((tweet.retweetCount ?? 0) + (tweet.quoteCount ?? 0)),
+                                  ),
+                                if (tweet.favoriteCount != null)
+                                  _createFooterTextButton(
+                                    Icons.favorite_border,
+                                    numberFormat.format(tweet.favoriteCount),
+                                  ),
+                                const SizedBox(width: 8.0),
+                                Consumer<SavedTweetModel>(
+                                  builder: (context, model, child) {
+                                    var isSaved = model.isSaved(tweet.idStr!);
+                                    if (isSaved) {
+                                      return _createFooterIconButton(Icons.bookmark, null, 1, () async {
+                                        await model.deleteSavedTweet(tweet.idStr!);
+                                        if (mounted) {
+                                          setState(() {});
+                                        } else {
+                                          DataService().map['toggleRefreshFeed'] = true;
+                                        }
+                                      });
+                                    } else {
+                                      return _createFooterIconButton(Icons.bookmark, null, 0, () async {
+                                        await model.saveTweet(tweet.idStr!, tweet.user?.idStr, tweet.toJson());
+                                        setState(() {});
+                                      });
                                     }
-                                    else {
-                                      DataService().map['toggleRefreshFeed'] = true;
-                                    }
-                                  });
-                                } else {
-                                  return _createFooterIconButton(Icons.bookmark, null, 0, () async {
-                                    await model.saveTweet(tweet.idStr!, tweet.user?.idStr, tweet.toJson());
-                                    setState(() {});
-                                  });
-                                }
-                              }),
-                              translateButton,
-                            ],
+                                  },
+                                ),
+                                translateButton,
+                              ],
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                  ],
-                ))
+                    ],
+                  ),
+                ),
               ],
             ),
-          ))));
+          ),
+        ),
+      ),
+    );
   }
 }
 
@@ -803,7 +906,7 @@ class _TweetTileLeading extends StatelessWidget {
   final IconData icon;
   final Iterable<InlineSpan> children;
 
-  const _TweetTileLeading({Key? key, this.onTap, required this.icon, required this.children}) : super(key: key);
+  const _TweetTileLeading({this.onTap, required this.icon, required this.children});
 
   @override
   Widget build(BuildContext context) {
@@ -815,13 +918,16 @@ class _TweetTileLeading extends StatelessWidget {
           alignment: Alignment.centerLeft,
           padding: const EdgeInsets.only(bottom: 0, left: 52, right: 16, top: 0),
           child: RichText(
-            text: TextSpan(children: [
-              WidgetSpan(
+            text: TextSpan(
+              children: [
+                WidgetSpan(
                   child: Icon(icon, size: 12, color: Theme.of(context).hintColor),
-                  alignment: PlaceholderAlignment.middle),
-              const WidgetSpan(child: SizedBox(width: 16)),
-              ...children
-            ]),
+                  alignment: PlaceholderAlignment.middle,
+                ),
+                const WidgetSpan(child: SizedBox(width: 16)),
+                ...children,
+              ],
+            ),
           ),
         ),
       ),

@@ -18,9 +18,13 @@ class ProfileTweets extends StatefulWidget {
   final bool includeReplies;
   final List<String> pinnedTweets;
 
-  const ProfileTweets(
-      {Key? key, required this.user, required this.type, required this.includeReplies, required this.pinnedTweets})
-      : super(key: key);
+  const ProfileTweets({
+    super.key,
+    required this.user,
+    required this.type,
+    required this.includeReplies,
+    required this.pinnedTweets,
+  });
 
   @override
   State<ProfileTweets> createState() => _ProfileTweetsState();
@@ -28,7 +32,7 @@ class ProfileTweets extends StatefulWidget {
 
 class _ProfileTweetsState extends State<ProfileTweets> with AutomaticKeepAliveClientMixin<ProfileTweets> {
   late final Twitter _twitter;
-  late PagingController<String?, TweetChain> _pagingController;
+  late final PagingController<String?, TweetChain> _pagingController;
 
   static const int pageSize = 20;
 
@@ -40,10 +44,10 @@ class _ProfileTweetsState extends State<ProfileTweets> with AutomaticKeepAliveCl
     super.initState();
 
     _twitter = Twitter();
-    _pagingController = PagingController(firstPageKey: null);
-    _pagingController.addPageRequestListener((cursor) {
-      _loadTweets(cursor);
-    });
+    _pagingController = PagingController<String?, TweetChain>(
+      getNextPageKey: (state) => state.lastPageIsEmpty || state.keys?.isEmpty != false ? null : state.keys!.last,
+      fetchPage: (cursor) => _loadTweetsPage(cursor),
+    );
   }
 
   @override
@@ -52,42 +56,51 @@ class _ProfileTweetsState extends State<ProfileTweets> with AutomaticKeepAliveCl
     super.dispose();
   }
 
-  Future _loadTweets(String? cursor) async {
+  Future<List<TweetChain>> _loadTweetsPage(String? cursor) async {
     try {
       TweetStatus result;
       if (TwitterAccount.hasAccountAvailable()) {
         if (PrefService.of(context).get(optionEnhancedProfile)) {
-          result = await _twitter.getUserWithProfileGraphql(widget.user.idStr!, widget.type, widget.pinnedTweets,
-              cursor: cursor, count: pageSize, includeReplies: widget.includeReplies);
+          result = await _twitter.getUserWithProfileGraphql(
+            widget.user.idStr!,
+            widget.type,
+            widget.pinnedTweets,
+            cursor: cursor,
+            count: pageSize,
+            includeReplies: widget.includeReplies,
+          );
+        } else {
+          result = await _twitter.getTweets(
+            widget.user.idStr!,
+            widget.type,
+            widget.pinnedTweets,
+            cursor: cursor,
+            count: pageSize,
+            includeReplies: widget.includeReplies,
+          );
         }
-        else {
-          result = await _twitter.getTweets(widget.user.idStr!, widget.type, widget.pinnedTweets,
-              cursor: cursor, count: pageSize, includeReplies: widget.includeReplies);
-        }
-      }
-      else {
-        result = await _twitter.getUserTweets(widget.user.idStr!, widget.type, widget.pinnedTweets,
-            count: pageSize, includeReplies: widget.includeReplies);
+      } else {
+        result = await _twitter.getUserTweets(
+          widget.user.idStr!,
+          widget.type,
+          widget.pinnedTweets,
+          count: pageSize,
+          includeReplies: widget.includeReplies,
+        );
       }
 
       if (!mounted) {
-        return;
+        return [];
       }
 
-      if (result.cursorBottom == null) {
-        _pagingController.appendLastPage(result.chains);
-      }
-      else {
-        if (result.cursorBottom == _pagingController.nextPageKey) {
-          _pagingController.appendLastPage([]);
-        } else {
-          _pagingController.appendPage(result.chains, result.cursorBottom);
-        }
-      }
-    } catch (e, stackTrace) {
+      // Return the chains directly, the pagination logic is handled by the controller
+      return result.chains;
+    } catch (e) {
       if (mounted) {
-        _pagingController.error = [e, stackTrace];
+        // Re-throw the error so the controller can handle it
+        rethrow;
       }
+      return [];
     }
   }
 
@@ -96,50 +109,56 @@ class _ProfileTweetsState extends State<ProfileTweets> with AutomaticKeepAliveCl
     super.build(context);
     TwitterAccount.setCurrentContext(context);
 
-    return Consumer<TweetContextState>(builder: (context, model, child) {
-      if (model.hideSensitive && (widget.user.possiblySensitive ?? false)) {
-        return EmojiErrorWidget(
-          emoji: '🍆🙈🍆',
-          message: L10n.current.possibly_sensitive,
-          errorMessage: L10n.current.possibly_sensitive_profile,
-          onRetry: () async => model.setHideSensitive(false),
-          retryText: L10n.current.yes_please,
-        );
-      }
+    return Consumer<TweetContextState>(
+      builder: (context, model, child) {
+        if (model.hideSensitive && (widget.user.possiblySensitive ?? false)) {
+          return EmojiErrorWidget(
+            emoji: '🍆🙈🍆',
+            message: L10n.current.possibly_sensitive,
+            errorMessage: L10n.current.possibly_sensitive_profile,
+            onRetry: () async => model.setHideSensitive(false),
+            retryText: L10n.current.yes_please,
+          );
+        }
 
-      return RefreshIndicator(
-        onRefresh: () async => _pagingController.refresh(),
-        child: PagedListView<String?, TweetChain>(
-          padding: EdgeInsets.zero,
-          pagingController: _pagingController,
-          addAutomaticKeepAlives: false,
-          builderDelegate: PagedChildBuilderDelegate(
-            itemBuilder: (context, chain, index) {
-              return TweetConversation(
-                  id: chain.id, tweets: chain.tweets, username: widget.user.screenName!, isPinned: chain.isPinned);
-            },
-            firstPageErrorIndicatorBuilder: (context) => FullPageErrorWidget(
-              error: _pagingController.error[0],
-              stackTrace: _pagingController.error[1],
-              prefix: L10n.of(context).unable_to_load_the_tweets,
-              onRetry: () => _loadTweets(_pagingController.firstPageKey),
-            ),
-            newPageErrorIndicatorBuilder: (context) => FullPageErrorWidget(
-              error: _pagingController.error[0],
-              stackTrace: _pagingController.error[1],
-              prefix: L10n.of(context).unable_to_load_the_next_page_of_tweets,
-              onRetry: () => _loadTweets(_pagingController.nextPageKey),
-            ),
-            noItemsFoundIndicatorBuilder: (context) {
-              return Center(
-                child: Text(
-                  L10n.of(context).could_not_find_any_tweets_by_this_user,
+        return RefreshIndicator(
+          onRefresh: () async => _pagingController.refresh(),
+          child: PagingListener(
+            controller: _pagingController,
+            builder: (context, state, fetchNextPage) => PagedListView<String?, TweetChain>(
+              state: state,
+              fetchNextPage: fetchNextPage,
+              padding: EdgeInsets.zero,
+              addAutomaticKeepAlives: false,
+              builderDelegate: PagedChildBuilderDelegate(
+                itemBuilder: (context, chain, index) {
+                  return TweetConversation(
+                    id: chain.id,
+                    tweets: chain.tweets,
+                    username: widget.user.screenName!,
+                    isPinned: chain.isPinned,
+                  );
+                },
+                firstPageErrorIndicatorBuilder: (context) => FullPageErrorWidget(
+                  error: state.error ?? Exception('Unknown error'),
+                  stackTrace: null,
+                  prefix: L10n.of(context).unable_to_load_the_tweets,
+                  onRetry: () => _pagingController.refresh(),
                 ),
-              );
-            },
+                newPageErrorIndicatorBuilder: (context) => FullPageErrorWidget(
+                  error: state.error ?? Exception('Unknown error'),
+                  stackTrace: null,
+                  prefix: L10n.of(context).unable_to_load_the_next_page_of_tweets,
+                  onRetry: () => _pagingController.fetchNextPage(),
+                ),
+                noItemsFoundIndicatorBuilder: (context) {
+                  return Center(child: Text(L10n.of(context).could_not_find_any_tweets_by_this_user));
+                },
+              ),
+            ),
           ),
-        ),
-      );
-    });
+        );
+      },
+    );
   }
 }

@@ -9,10 +9,78 @@ rootProject.buildDir = '../build'
 subprojects {
     project.buildDir = "${rootProject.buildDir}/${project.name}"
 }
-subprojects {
-    project.evaluationDependsOn(':app')
-}
 
 tasks.register("clean", Delete) {
     delete rootProject.buildDir
+}
+
+subprojects {
+    afterEvaluate { project ->
+        if (project.hasProperty('android')) {
+            android {
+                compileSdk 35
+                
+                compileOptions {
+                    sourceCompatibility JavaVersion.VERSION_17
+                    targetCompatibility JavaVersion.VERSION_17
+                }
+                
+                if (project.android.hasProperty('kotlinOptions')) {
+                    kotlinOptions {
+                        jvmTarget = '17'
+                    }
+                }
+            }
+        }
+    }
+}
+
+// Update sqflite plugin configuration to ensure proper desugaring
+subprojects {
+    afterEvaluate { project ->
+        if (project.name == "sqflite") {
+            android {
+                namespace "com.tekartik.sqflite"
+                compileSdk 35
+                defaultConfig {
+                    multiDexEnabled true
+                }
+                
+                compileOptions {
+                    sourceCompatibility JavaVersion.VERSION_17
+                    targetCompatibility JavaVersion.VERSION_17
+                    // Enable core library desugaring for newer Java methods
+                    coreLibraryDesugaringEnabled true
+                }
+                
+                // Add dependency for desugaring
+                dependencies {
+                    coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.1.4'
+                }
+            }
+        }
+        
+        // Also configure sqflite_android specifically
+        if (project.name == "sqflite_android") {
+            android {
+                namespace "com.tekartik.sqflite"
+                compileSdk 35
+                defaultConfig {
+                    multiDexEnabled true
+                }
+                
+                compileOptions {
+                    sourceCompatibility JavaVersion.VERSION_17
+                    targetCompatibility JavaVersion.VERSION_17
+                    // Enable core library desugaring for newer Java methods
+                    coreLibraryDesugaringEnabled true
+                }
+                
+                // Add dependency for desugaring
+                dependencies {
+                    coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.1.4'
+                }
+            }
+        }
+    }
 }

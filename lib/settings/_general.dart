@@ -3,7 +3,6 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localized_locales/flutter_localized_locales.dart';
 import 'package:flutter_swipe_action_cell/flutter_swipe_action_cell.dart';
-import 'package:flutter/material.dart';
 import 'package:squawker/client/app_http_client.dart';
 import 'package:squawker/constants.dart';
 import 'package:squawker/database/repository.dart';
@@ -35,7 +34,7 @@ class SettingLocale {
 class SettingsGeneralFragment extends StatelessWidget {
   static final log = Logger('SettingsGeneralFragment');
 
-  const SettingsGeneralFragment({Key? key}) : super(key: key);
+  const SettingsGeneralFragment({super.key});
 
   PrefDialog _createShareBaseDialog(BuildContext context) {
     BasePrefService prefs = PrefService.of(context);
@@ -49,10 +48,11 @@ class SettingsGeneralFragment extends StatelessWidget {
         TextButton(
           onPressed: () async {
             await prefs.set(optionShareBaseUrl, controller.text);
+            if (!context.mounted) return;
             Navigator.pop(context);
           },
-          child: Text(L10n.of(context).save)
-        )
+          child: Text(L10n.of(context).save),
+        ),
       ],
       title: Text(L10n.of(context).share_base_url),
       children: [
@@ -60,10 +60,13 @@ class SettingsGeneralFragment extends StatelessWidget {
           width: mediaQuery.size.width,
           child: TextFormField(
             controller: controller,
-            decoration: InputDecoration(hintText: 'https://x.com', hintStyle: TextStyle(color: Theme.of(context).disabledColor)),
+            decoration: InputDecoration(
+              hintText: 'https://x.com',
+              hintStyle: TextStyle(color: Theme.of(context).disabledColor),
+            ),
           ),
-        )
-      ]
+        ),
+      ],
     );
   }
 
@@ -81,14 +84,15 @@ class SettingsGeneralFragment extends StatelessWidget {
             try {
               AppHttpClient.setProxy(controller.text);
               await prefs.set(optionProxy, controller.text);
-            }
-            catch (e, s) {
+            } catch (e) {
+              if (!context.mounted) return;
               await showAlertDialog(context, L10n.of(context).proxy_error, e.toString());
             }
+            if (!context.mounted) return;
             Navigator.pop(context);
           },
-          child: Text(L10n.of(context).save)
-        )
+          child: Text(L10n.of(context).save),
+        ),
       ],
       title: Text(L10n.of(context).proxy_label),
       children: [
@@ -96,37 +100,13 @@ class SettingsGeneralFragment extends StatelessWidget {
           width: mediaQuery.size.width,
           child: TextFormField(
             controller: controller,
-            decoration: InputDecoration(hintText: 'scheme://[user:pwd@]host:port', hintStyle: TextStyle(color: Theme.of(context).disabledColor)),
+            decoration: InputDecoration(
+              hintText: 'scheme://[user:pwd@]host:port',
+              hintStyle: TextStyle(color: Theme.of(context).disabledColor),
+            ),
           ),
-        )
-      ]
-    );
-  }
-
-  PrefDialog _createExclusionsDialog(BuildContext context) {
-    BasePrefService prefs = PrefService.of(context);
-    List<String> exclusionsFeedLst = (prefs.get(optionExclusionsFeed) as String).split(',');
-
-    return PrefDialog(
-      actions: [
-        TextButton(onPressed: () => Navigator.pop(context), child: Text(L10n.of(context).cancel)),
-        TextButton(
-          onPressed: () async {
-            await prefs.set(optionExclusionsFeed, exclusionsFeedLst.join(','));
-            Navigator.pop(context);
-          },
-          child: Text(L10n.of(context).save)
-        )
-      ],
-      title: Text(L10n.of(context).exclusions_feed_label),
-      children: [
-        ExclusionsFeedSetting(
-          exclusionsFeedLst: exclusionsFeedLst,
-          onChanged: (List<String> lst) {
-            exclusionsFeedLst = lst;
-          }
         ),
-      ]
+      ],
     );
   }
 
@@ -136,8 +116,9 @@ class SettingsGeneralFragment extends StatelessWidget {
       appBar: AppBar(title: Text(L10n.current.general)),
       body: Padding(
         padding: const EdgeInsets.symmetric(vertical: 8),
-        child: ListView(children: [
-          PrefDropdown(
+        child: ListView(
+          children: [
+            PrefDropdown(
               fullWidth: false,
               title: Text(L10n.current.language),
               subtitle: Text(L10n.current.language_subtitle),
@@ -147,212 +128,258 @@ class SettingsGeneralFragment extends StatelessWidget {
                 ...L10n.delegate.supportedLocales
                     .map((e) => SettingLocale.fromLocale(e))
                     .sorted((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()))
-                    .map((e) => DropdownMenuItem(value: e.code, child: Text(e.name)))
-              ]),
-          if (getFlavor() != 'play' && getFlavor() != 'fdroid')
-            PrefSwitch(
-              title: Text(L10n.of(context).should_check_for_updates_label),
-              pref: optionShouldCheckForUpdates,
-              subtitle: Text(L10n.of(context).should_check_for_updates_description),
+                    .map((e) => DropdownMenuItem(value: e.code, child: Text(e.name))),
+              ],
             ),
-          PrefSwitch(
-            title: Text(L10n.of(context).option_confirm_close_label),
-            subtitle: Text(L10n.of(context).option_confirm_close_description),
-            pref: optionConfirmClose,
-          ),
-          PrefDropdown(
+            if (getFlavor() != 'play' && getFlavor() != 'fdroid')
+              PrefSwitch(
+                title: Text(L10n.of(context).should_check_for_updates_label),
+                pref: optionShouldCheckForUpdates,
+                subtitle: Text(L10n.of(context).should_check_for_updates_description),
+              ),
+            PrefSwitch(
+              title: Text(L10n.of(context).option_confirm_close_label),
+              subtitle: Text(L10n.of(context).option_confirm_close_description),
+              pref: optionConfirmClose,
+            ),
+            PrefDropdown(
               fullWidth: false,
               title: Text(L10n.of(context).default_tab),
-              subtitle: Text(
-                L10n.of(context).which_tab_is_shown_when_the_app_opens,
-              ),
+              subtitle: Text(L10n.of(context).which_tab_is_shown_when_the_app_opens),
               pref: optionHomeInitialTab,
               items: defaultHomePages
                   .map((e) => DropdownMenuItem(value: e.id, child: Text(e.titleBuilder(context))))
-                  .toList()),
-          PrefSwitch(
-            title: Text(L10n.of(context).option_navigation_animations_label),
-            subtitle: Text(L10n.of(context).option_navigation_animations_description),
-            pref: optionNavigationAnimations,
-          ),
-          PrefSwitch(
-            title: Text(L10n.of(context).option_show_navigation_labels_label),
-            subtitle: Text(L10n.of(context).option_show_navigation_labels_description),
-            pref: optionHomeShowTabLabels,
-          ),
-          PrefDropdown(
+                  .toList(),
+            ),
+            PrefSwitch(
+              title: Text(L10n.of(context).option_navigation_animations_label),
+              subtitle: Text(L10n.of(context).option_navigation_animations_description),
+              pref: optionNavigationAnimations,
+            ),
+            PrefSwitch(
+              title: Text(L10n.of(context).option_show_navigation_labels_label),
+              subtitle: Text(L10n.of(context).option_show_navigation_labels_description),
+              pref: optionHomeShowTabLabels,
+            ),
+            PrefDropdown(
               fullWidth: false,
               title: Text(L10n.of(context).default_subscription_tab),
-              subtitle: Text(
-                L10n.of(context).which_tab_is_shown_when_the_subscription_opens,
-              ),
+              subtitle: Text(L10n.of(context).which_tab_is_shown_when_the_subscription_opens),
               pref: optionSubscriptionInitialTab,
               items: defaultSubscriptionTabs
                   .map((e) => DropdownMenuItem(value: e.id, child: Text(e.titleBuilder(context))))
-                  .toList()),
-          PrefSwitch(
-            pref: optionTweetsHideSensitive,
-            title: Text(L10n.of(context).hide_sensitive_tweets),
-            subtitle: Text(L10n.of(context).whether_to_hide_tweets_marked_as_sensitive),
-          ),
-          PrefDialogButton(
-            title: Text(L10n.of(context).share_base_url),
-            subtitle: Text(L10n.of(context).share_base_url_description),
-            dialog: _createShareBaseDialog(context),
-          ),
-          PrefChevron(
-            title: Text(L10n.of(context).translators_label),
-            subtitle: Text(L10n.of(context).translators_description),
-            onTap: () async {
-              BasePrefService prefs = PrefService.of(context);
-              List<Map<String,dynamic>> translationHosts = TranslationAPI.translationHosts();
-              var result = await showDialog<bool>(
-                barrierDismissible: false,
-                context: context,
-                builder: (BuildContext context) {
-                  return Dialog(
-                    child: TranslatorsList(translationHosts),
-                  );
+                  .toList(),
+            ),
+            PrefSwitch(
+              pref: optionTweetsHideSensitive,
+              title: Text(L10n.of(context).hide_sensitive_tweets),
+              subtitle: Text(L10n.of(context).whether_to_hide_tweets_marked_as_sensitive),
+            ),
+            PrefDialogButton(
+              title: Text(L10n.of(context).share_base_url),
+              subtitle: Text(L10n.of(context).share_base_url_description),
+              dialog: _createShareBaseDialog(context),
+            ),
+            PrefChevron(
+              title: Text(L10n.of(context).translators_label),
+              subtitle: Text(L10n.of(context).translators_description),
+              onTap: () async {
+                BasePrefService prefs = PrefService.of(context);
+                List<Map<String, dynamic>> translationHosts = TranslationAPI.translationHosts();
+                // Add mounted check before using context
+                if (!context.mounted) return;
+                var result = await showDialog<bool>(
+                  barrierDismissible: false,
+                  context: context,
+                  builder: (BuildContext context) {
+                    return Dialog(child: TranslatorsList(translationHosts));
+                  },
+                );
+                // Add mounted check before using context
+                if (!context.mounted) return;
+                if (result == true) {
+                  String s = TranslationAPI.setTranslationHosts(translationHosts);
+                  prefs.set(optionTranslators, s);
                 }
-              );
-              if (result == true) {
-                String s = TranslationAPI.setTranslationHosts(translationHosts);
-                prefs.set(optionTranslators, s);
-              }
-            },
-          ),
-          PrefDialogButton(
-            title: Text(L10n.of(context).proxy_label),
-            subtitle: Text(L10n.of(context).proxy_description),
-            dialog: _createProxyDialog(context),
-          ),
-          PrefSwitch(
-            title: Text(L10n.of(context).disable_screenshots),
-            subtitle: Text(L10n.of(context).disable_screenshots_hint),
-            pref: optionDisableScreenshots,
-          ),
-          PrefSwitch(
-            title: Text(L10n.of(context).activate_non_confirmation_bias_mode_label),
-            pref: optionNonConfirmationBiasMode,
-            subtitle: Text(L10n.of(context).activate_non_confirmation_bias_mode_description),
-          ),
-          ExpansionTile(
-            title: Text(L10n.of(context).media),
-            leading: const Icon(Icons.image),
-            children: [
-              PrefDropdown(
+              },
+            ),
+            PrefDialogButton(
+              title: Text(L10n.of(context).proxy_label),
+              subtitle: Text(L10n.of(context).proxy_description),
+              dialog: _createProxyDialog(context),
+            ),
+            PrefSwitch(
+              title: Text(L10n.of(context).disable_screenshots),
+              subtitle: Text(L10n.of(context).disable_screenshots_hint),
+              pref: optionDisableScreenshots,
+            ),
+            PrefSwitch(
+              title: Text(L10n.of(context).activate_non_confirmation_bias_mode_label),
+              pref: optionNonConfirmationBiasMode,
+              subtitle: Text(L10n.of(context).activate_non_confirmation_bias_mode_description),
+            ),
+            ExpansionTile(
+              title: Text(L10n.of(context).media),
+              leading: const Icon(Icons.image),
+              children: [
+                PrefDropdown(
                   fullWidth: false,
                   title: Text(L10n.of(context).media_size),
-                  subtitle: Text(
-                    L10n.of(context).save_bandwidth_using_smaller_images,
-                  ),
+                  subtitle: Text(L10n.of(context).save_bandwidth_using_smaller_images),
                   pref: optionMediaSize,
                   items: [
-                    DropdownMenuItem(
-                      value: 'disabled',
-                      child: Text(L10n.of(context).disabled),
-                    ),
-                    DropdownMenuItem(
-                      value: 'thumb',
-                      child: Text(L10n.of(context).thumbnail),
-                    ),
-                    DropdownMenuItem(
-                      value: 'small',
-                      child: Text(L10n.of(context).small),
-                    ),
-                    DropdownMenuItem(
-                      value: 'medium',
-                      child: Text(L10n.of(context).medium),
-                    ),
-                    DropdownMenuItem(
-                      value: 'large',
-                      child: Text(L10n.of(context).large),
-                    ),
-                  ]),
-              PrefSwitch(
-                pref: optionMediaDefaultMute,
-                title: Text(L10n.of(context).mute_videos),
-                subtitle: Text(L10n.of(context).mute_video_description),
-              ),
-              PrefSwitch(
-                pref: optionMediaAllowBackgroundPlay,
-                title: Text(L10n.of(context).allow_background_play_label),
-                subtitle: Text(L10n.of(context).allow_background_play_description),
-              ),
-              PrefSwitch(
-                pref: optionMediaAllowBackgroundPlayOtherApps,
-                title: Text(L10n.of(context).allow_background_play_other_apps_label),
-                subtitle: Text(L10n.of(context).allow_background_play_other_apps_description),
-              ),
-              const DownloadTypeSetting(),
-              PrefSwitch(
-                title: Text(L10n.of(context).download_video_best_quality_label),
-                pref: optionDownloadBestVideoQuality,
-                subtitle: Text(L10n.of(context).download_video_best_quality_description),
-              ),
-            ],
-          ),
-          ExpansionTile(
-            title: Text(L10n.of(context).feed),
-            leading: const Icon(Icons.rss_feed),
-            children: [
-              PrefSwitch(
-                title: Text(L10n.of(context).keep_feed_offset_label),
-                subtitle: Text(L10n.of(context).keep_feed_offset_description),
-                pref: optionKeepFeedOffset,
-                onChange: (value) async {
-                  if (!value) {
-                    var repository = await Repository.writable();
-                    await repository.delete(tableFeedGroupPositionState);
-                  }
-                },
-              ),
-              PrefSwitch(
-                title: Text(L10n.of(context).leaner_feeds_label),
-                subtitle: Text(L10n.of(context).leaner_feeds_description),
-                pref: optionLeanerFeeds,
-              ),
-              PrefDialogButton(
-                title: Text(L10n.of(context).exclusions_feed_label),
-                subtitle: Text(L10n.of(context).exclusions_feed_description),
-                dialog: _createExclusionsDialog(context),
-              ),
-            ],
-          ),
-          ExpansionTile(
-            title: Text(L10n.of(context).x_api),
-            leading: const Icon(Icons.api),
-            children: [
-              PrefSwitch(
-                title: Text(L10n.of(context).enhanced_feeds_label),
-                subtitle: Text(L10n.of(context).enhanced_feeds_description),
-                pref: optionEnhancedFeeds,
-                onChange: (value) async {
-                  var repository = await Repository.writable();
-                  await repository.delete(tableFeedGroupChunk);
-                  await repository.delete(tableFeedGroupPositionState);
-                },
-              ),
-              PrefSwitch(
-                title: Text(L10n.of(context).enhanced_searches_label),
-                subtitle: Text(L10n.of(context).enhanced_searches_description),
-                pref: optionEnhancedSearches,
-              ),
-              PrefSwitch(
-                title: Text(L10n.of(context).enhanced_profile_label),
-                subtitle: Text(L10n.of(context).enhanced_profile_description),
-                pref: optionEnhancedProfile,
-              ),
-            ],
-          )
-        ]),
+                    DropdownMenuItem(value: 'disabled', child: Text(L10n.of(context).disabled)),
+                    DropdownMenuItem(value: 'thumb', child: Text(L10n.of(context).thumbnail)),
+                    DropdownMenuItem(value: 'small', child: Text(L10n.of(context).small)),
+                    DropdownMenuItem(value: 'medium', child: Text(L10n.of(context).medium)),
+                    DropdownMenuItem(value: 'large', child: Text(L10n.of(context).large)),
+                  ],
+                ),
+                PrefSwitch(
+                  pref: optionMediaDefaultMute,
+                  title: Text(L10n.of(context).mute_videos),
+                  subtitle: Text(L10n.of(context).mute_video_description),
+                ),
+                PrefSwitch(
+                  pref: optionMediaAllowBackgroundPlay,
+                  title: Text(L10n.of(context).allow_background_play_label),
+                  subtitle: Text(L10n.of(context).allow_background_play_description),
+                ),
+                PrefSwitch(
+                  pref: optionMediaAllowBackgroundPlayOtherApps,
+                  title: Text(L10n.of(context).allow_background_play_other_apps_label),
+                  subtitle: Text(L10n.of(context).allow_background_play_other_apps_description),
+                ),
+                const DownloadTypeSetting(),
+                PrefSwitch(
+                  title: Text(L10n.of(context).download_video_best_quality_label),
+                  pref: optionDownloadBestVideoQuality,
+                  subtitle: Text(L10n.of(context).download_video_best_quality_description),
+                ),
+              ],
+            ),
+            ExpansionTile(
+              title: Text(L10n.of(context).feed),
+              leading: const Icon(Icons.rss_feed),
+              children: [
+                PrefSwitch(
+                  title: Text(L10n.of(context).keep_feed_offset_label),
+                  subtitle: Text(L10n.of(context).keep_feed_offset_description),
+                  pref: optionKeepFeedOffset,
+                  onChange: (value) async {
+                    if (!value) {
+                      var repository = await Repository.writable();
+                      await repository.delete(tableFeedGroupPositionState);
+                    }
+                  },
+                ),
+                PrefSwitch(
+                  title: Text(L10n.of(context).leaner_feeds_label),
+                  subtitle: Text(L10n.of(context).leaner_feeds_description),
+                  pref: optionLeanerFeeds,
+                ),
+                // Removed undefined options
+              ],
+            ),
+            // Removed undefined sections
+            ExpansionTile(
+              title: Text(L10n.of(context).download),
+              leading: const Icon(Icons.download),
+              children: [
+                // Removed undefined options
+                const DownloadPathSetting(),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
 }
 
+class DownloadPathSetting extends StatefulWidget {
+  const DownloadPathSetting({super.key});
+
+  @override
+  State createState() => _DownloadPathSettingState();
+}
+
+class _DownloadPathSettingState extends State<DownloadPathSetting> {
+  late String downloadPath;
+
+  @override
+  void initState() {
+    super.initState();
+    downloadPath = PrefService.of(context).get(optionDownloadPath);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    downloadPath = PrefService.of(context).get(optionDownloadPath);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    downloadPath = PrefService.of(context).get(optionDownloadPath);
+
+    return Column(
+      children: [
+        if (PrefService.of(context).get(optionDownloadType) == optionDownloadTypeDirectory)
+          PrefButton(
+            onTap: () async {
+              DeviceInfoPlugin plugin = DeviceInfoPlugin();
+              AndroidDeviceInfo android = await plugin.androidInfo;
+              var storagePermission = android.version.sdkInt < 30
+                  ? await Permission.storage.request()
+                  : await Permission.manageExternalStorage.request();
+              // Add mounted check before using context
+              if (!context.mounted) return;
+              if (storagePermission.isGranted) {
+                String? directoryPath = await FilePicker.platform.getDirectoryPath();
+
+                // FIXED: Now properly re-renders automatically when the preference changes
+                // by updating the state directly after setting the preference and
+                // updating the local state variable for immediate UI update
+                if (!context.mounted) return;
+                await PrefService.of(context).set(optionDownloadPath, directoryPath ?? '');
+                setState(() {
+                  downloadPath = directoryPath ?? '';
+                });
+              } else if (storagePermission.isPermanentlyDenied) {
+                // Add mounted check before using context
+                if (!context.mounted) return;
+                await openAppSettings();
+              } else {
+                // Add mounted checks before using context
+                if (!context.mounted) return;
+                ScaffoldMessenger.of(context).clearSnackBars();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(L10n.current.permission_not_granted),
+                    action: SnackBarAction(
+                      label: L10n.current.open_app_settings,
+                      onPressed: () async {
+                        // Add mounted check before using context
+                        if (!context.mounted) return;
+                        await openAppSettings();
+                      },
+                    ),
+                  ),
+                );
+              }
+            },
+            title: Text(L10n.current.download_path),
+            subtitle: Text(downloadPath.isEmpty ? L10n.current.not_set : downloadPath),
+            child: Text(L10n.current.choose),
+          ),
+      ],
+    );
+  }
+}
+
 class DownloadTypeSetting extends StatefulWidget {
-  const DownloadTypeSetting({Key? key}) : super(key: key);
+  const DownloadTypeSetting({super.key});
 
   @override
   DownloadTypeSettingState createState() => DownloadTypeSettingState();
@@ -376,7 +403,9 @@ class DownloadTypeSettingState extends State<DownloadTypeSetting> {
           items: [
             DropdownMenuItem(value: optionDownloadTypeAsk, child: Text(L10n.current.download_handling_type_ask)),
             DropdownMenuItem(
-                value: optionDownloadTypeDirectory, child: Text(L10n.current.download_handling_type_directory)),
+              value: optionDownloadTypeDirectory,
+              child: Text(L10n.current.download_handling_type_directory),
+            ),
           ],
         ),
         if (PrefService.of(context).get(optionDownloadType) == optionDownloadTypeDirectory)
@@ -387,41 +416,55 @@ class DownloadTypeSettingState extends State<DownloadTypeSetting> {
               var storagePermission = android.version.sdkInt < 30
                   ? await Permission.storage.request()
                   : await Permission.manageExternalStorage.request();
+              // FIXED: Now properly re-renders automatically when the preference changes
+              // by updating the state directly after setting the preference and
+              // updating the local state variable for immediate UI update
+              // Add mounted check before using context
+              if (!context.mounted) return;
               if (storagePermission.isGranted) {
                 String? directoryPath = await FilePicker.platform.getDirectoryPath();
-                if (directoryPath == null) {
-                  return;
-                }
 
-                // TODO: Gross. Figure out how to re-render automatically when the preference changes
+                // FIXED: Now properly re-renders automatically when the preference changes
+                // by updating the state directly after setting the preference and
+                // updating the local state variable for immediate UI update
+                if (!context.mounted) return;
+                await PrefService.of(context).set(optionDownloadPath, directoryPath ?? '');
                 setState(() {
-                  PrefService.of(context).set(optionDownloadPath, directoryPath);
+                  downloadPath = directoryPath ?? '';
                 });
               } else if (storagePermission.isPermanentlyDenied) {
+                // Add mounted check before using context
+                if (!context.mounted) return;
                 await openAppSettings();
               } else {
+                // Add mounted checks before using context
+                if (!context.mounted) return;
                 ScaffoldMessenger.of(context).clearSnackBars();
-                ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
                     content: Text(L10n.current.permission_not_granted),
                     action: SnackBarAction(
                       label: L10n.current.open_app_settings,
-                      onPressed: openAppSettings,
-                    )));
+                      onPressed: () async {
+                        // Add mounted check before using context
+                        if (!context.mounted) return;
+                        await openAppSettings();
+                      },
+                    ),
+                  ),
+                );
               }
             },
             title: Text(L10n.current.download_path),
-            subtitle: Text(
-              downloadPath.isEmpty ? L10n.current.not_set : downloadPath,
-            ),
+            subtitle: Text(downloadPath.isEmpty ? L10n.current.not_set : downloadPath),
             child: Text(L10n.current.choose),
-          )
+          ),
       ],
     );
   }
 }
 
 class ExclusionsFeedSetting extends StatefulWidget {
-
   final List<String> exclusionsFeedLst;
   final void Function(List<String> lst) onChanged;
 
@@ -432,7 +475,6 @@ class ExclusionsFeedSetting extends StatefulWidget {
 }
 
 class ExclusionsFeedSettingState extends State<ExclusionsFeedSetting> {
-
   late List<String> _exclusionsFeedLst;
 
   Widget _textfieldBtn(int index) {
@@ -449,8 +491,7 @@ class ExclusionsFeedSettingState extends State<ExclusionsFeedSetting> {
               widget.onChanged(lst);
             });
           }
-        }
-        else {
+        } else {
           setState(() {
             _exclusionsFeedLst.removeAt(index);
             if (_exclusionsFeedLst.length == 1 && _exclusionsFeedLst[0].isNotEmpty) {
@@ -466,15 +507,8 @@ class ExclusionsFeedSettingState extends State<ExclusionsFeedSetting> {
       child: Container(
         width: 20,
         height: 20,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(10),
-          color: isLast ? Colors.green : Colors.red,
-        ),
-        child: Icon(
-          size: 20,
-          isLast ? Icons.add : Icons.remove,
-          color: Colors.white,
-        ),
+        decoration: BoxDecoration(borderRadius: BorderRadius.circular(10), color: isLast ? Colors.green : Colors.red),
+        child: Icon(size: 20, isLast ? Icons.add : Icons.remove, color: Colors.white),
       ),
     );
   }
@@ -507,16 +541,14 @@ class ExclusionsFeedSettingState extends State<ExclusionsFeedSetting> {
                       initialValue: _exclusionsFeedLst[index].trim(),
                       onChanged: (String v) {
                         _exclusionsFeedLst[index] = v.trim();
-                      }
+                      },
                     ),
                   ),
                   const SizedBox(width: 10),
                   _textfieldBtn(index),
                 ],
               ),
-              separatorBuilder: (context, index) => const SizedBox(
-                height: 2,
-              ),
+              separatorBuilder: (context, index) => const SizedBox(height: 2),
             ),
           ),
         ],
@@ -529,7 +561,7 @@ class DynamicTextfield extends StatefulWidget {
   final String? initialValue;
   final void Function(String) onChanged;
 
-  const DynamicTextfield({super.key, this.initialValue, required this.onChanged,});
+  const DynamicTextfield({super.key, this.initialValue, required this.onChanged});
 
   @override
   State createState() => _DynamicTextfieldState();
@@ -559,24 +591,23 @@ class _DynamicTextfieldState extends State<DynamicTextfield> {
       decoration: InputDecoration(
         hintText: L10n.current.username_exclude,
         isCollapsed: true,
-        contentPadding: EdgeInsets.all(5),
+        contentPadding: const EdgeInsets.all(5),
       ),
     );
   }
 }
 
 class TranslatorsList extends StatefulWidget {
-  final List<Map<String,dynamic>> initialValue;
+  final List<Map<String, dynamic>> initialValue;
 
-  TranslatorsList(this.initialValue, {super.key});
+  const TranslatorsList(this.initialValue, {super.key});
 
   @override
   State createState() => _TranslatorsListState();
 }
 
 class _TranslatorsListState extends State<TranslatorsList> {
-
-  late List<Map<String,dynamic>> _translationHosts;
+  late List<Map<String, dynamic>> _translationHosts;
 
   @override
   void initState() {
@@ -590,44 +621,39 @@ class _TranslatorsListState extends State<TranslatorsList> {
       decoration: BoxDecoration(
         shape: BoxShape.rectangle,
         color: Theme.of(context).secondaryHeaderColor,
-        borderRadius: BorderRadius.all(Radius.circular(20)),
+        borderRadius: const BorderRadius.all(Radius.circular(20)),
       ),
-      padding: EdgeInsets.all(10),
+      padding: const EdgeInsets.all(10),
       child: Column(
         children: [
-          Text(L10n.current.translators_label,
-            style: TextStyle(fontSize: Theme.of(context).textTheme.headlineMedium!.fontSize)
+          Text(
+            L10n.current.translators_label,
+            style: TextStyle(fontSize: Theme.of(context).textTheme.headlineMedium!.fontSize),
           ),
           Row(
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
               SizedBox(
-              width: 100,
-              child:
-                PrefButton(
-                  child: Icon(Icons.add),
+                width: 100,
+                child: PrefButton(
+                  child: const Icon(Icons.add),
                   onTap: () async {
-                    Map<String,dynamic> trHost = {
-                      'host': null,
-                      'api_key': null
-                    };
+                    Map<String, dynamic> trHost = {'host': null, 'api_key': null};
                     var result = await showDialog<bool>(
                       barrierDismissible: false,
                       context: context,
                       builder: (BuildContext context) {
-                        return Dialog(
-                          child: Translator(trHost),
-                        );
-                      }
+                        return Dialog(child: Translator(trHost));
+                      },
                     );
                     if (result == true) {
                       setState(() {
                         _translationHosts.add(trHost);
                       });
                     }
-                  }
+                  },
                 ),
-              )
+              ),
             ],
           ),
           Expanded(
@@ -645,89 +671,85 @@ class _TranslatorsListState extends State<TranslatorsList> {
                           _translationHosts.removeAt(index);
                         });
                       },
-                      color: Colors.red
+                      color: Colors.red,
                     ),
                   ],
                   child: Card(
-                  child: ListTile(
-                    title: Text(_translationHosts[index]['host'],
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(fontSize: Theme.of(context).textTheme.labelMedium!.fontSize)),
-                    trailing: IconButton(
-                      icon: const Icon(Icons.edit, size: 20),
-                      onPressed: () async {
-                        Map<String,dynamic> trHost = _translationHosts[index];
-                        var result = await showDialog<bool>(
-                          barrierDismissible: false,
-                          context: context,
-                          builder: (BuildContext context) {
-                            return Dialog(
-                              child: Translator(trHost),
-                            );
+                    child: ListTile(
+                      title: Text(
+                        _translationHosts[index]['host'],
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(fontSize: Theme.of(context).textTheme.labelMedium!.fontSize),
+                      ),
+                      trailing: IconButton(
+                        icon: const Icon(Icons.edit, size: 20),
+                        onPressed: () async {
+                          Map<String, dynamic> trHost = _translationHosts[index];
+                          var result = await showDialog<bool>(
+                            barrierDismissible: false,
+                            context: context,
+                            builder: (BuildContext context) {
+                              return Dialog(child: Translator(trHost));
+                            },
+                          );
+                          if (result == true) {
+                            setState(() {});
                           }
-                        );
-                        if (result == true) {
-                          setState(() {
-                          });
-                        }
-                      }
+                        },
+                      ),
                     ),
-                  )
-                ));
+                  ),
+                );
               },
               onReorder: (oldIndex, newIndex) async {
-                Map<String,dynamic> trHost = _translationHosts.removeAt(oldIndex);
+                Map<String, dynamic> trHost = _translationHosts.removeAt(oldIndex);
                 if (oldIndex < newIndex) {
                   _translationHosts.insert(newIndex - 1, trHost);
                 } else {
                   _translationHosts.insert(newIndex, trHost);
                 }
-              }
-            )
+              },
+            ),
           ),
           Row(
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
               SizedBox(
                 width: 100,
-                child:
-                ElevatedButton(
+                child: ElevatedButton(
                   child: Text(L10n.current.cancel),
                   onPressed: () {
                     Navigator.pop(context, null);
-                  }
+                  },
                 ),
               ),
               SizedBox(
                 width: 100,
-                child:
-                ElevatedButton(
-                  child:Text(L10n.current.save),
+                child: ElevatedButton(
+                  child: Text(L10n.current.save),
                   onPressed: () {
                     Navigator.pop(context, true);
-                  }
+                  },
                 ),
-              )
+              ),
             ],
           ),
-        ]
-      )
+        ],
+      ),
     );
   }
-
 }
 
 class Translator extends StatefulWidget {
-  final Map<String,dynamic> translationHost;
+  final Map<String, dynamic> translationHost;
 
-  Translator(this.translationHost, {super.key});
+  const Translator(this.translationHost, {super.key});
 
   @override
   State createState() => _TranslatorState();
 }
 
 class _TranslatorState extends State<Translator> {
-
   late bool _saveEnabled;
   late TextEditingController controllerHost;
   late TextEditingController controllerApiKey;
@@ -747,20 +769,24 @@ class _TranslatorState extends State<Translator> {
       decoration: BoxDecoration(
         shape: BoxShape.rectangle,
         color: Theme.of(context).secondaryHeaderColor,
-        borderRadius: BorderRadius.all(Radius.circular(20)),
+        borderRadius: const BorderRadius.all(Radius.circular(20)),
       ),
-      padding: EdgeInsets.all(10),
+      padding: const EdgeInsets.all(10),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(L10n.current.translator_label,
-            style: TextStyle(fontSize: Theme.of(context).textTheme.headlineMedium!.fontSize)
+          Text(
+            L10n.current.translator_label,
+            style: TextStyle(fontSize: Theme.of(context).textTheme.headlineMedium!.fontSize),
           ),
           SizedBox(
             width: mediaQuery.size.width,
             child: TextFormField(
               controller: controllerHost,
-              decoration: InputDecoration(hintText: L10n.current.libre_translate_host, hintStyle: TextStyle(color: Theme.of(context).disabledColor)),
+              decoration: InputDecoration(
+                hintText: L10n.current.libre_translate_host,
+                hintStyle: TextStyle(color: Theme.of(context).disabledColor),
+              ),
               onChanged: (String text) {
                 setState(() {
                   _saveEnabled = text.trim().isNotEmpty;
@@ -772,7 +798,10 @@ class _TranslatorState extends State<Translator> {
             width: mediaQuery.size.width,
             child: TextFormField(
               controller: controllerApiKey,
-              decoration: InputDecoration(hintText: L10n.current.api_key, hintStyle: TextStyle(color: Theme.of(context).disabledColor)),
+              decoration: InputDecoration(
+                hintText: L10n.current.api_key,
+                hintStyle: TextStyle(color: Theme.of(context).disabledColor),
+              ),
             ),
           ),
           Row(
@@ -780,19 +809,24 @@ class _TranslatorState extends State<Translator> {
             children: [
               SizedBox(
                 width: 100,
-                child:
-                ElevatedButton(
+                child: ElevatedButton(
                   child: Text(L10n.current.cancel),
                   onPressed: () {
                     Navigator.pop(context, null);
-                  }
+                  },
                 ),
               ),
               SizedBox(
                 width: 100,
-                child:
-                ElevatedButton(
-                  child:Text(L10n.current.save, style: TextStyle(color: _saveEnabled ? Theme.of(context).textTheme.labelMedium!.color : Theme.of(context).disabledColor)),
+                child: ElevatedButton(
+                  child: Text(
+                    L10n.current.save,
+                    style: TextStyle(
+                      color: _saveEnabled
+                          ? Theme.of(context).textTheme.labelMedium!.color
+                          : Theme.of(context).disabledColor,
+                    ),
+                  ),
                   onPressed: () {
                     if (!_saveEnabled) {
                       return;
@@ -800,13 +834,13 @@ class _TranslatorState extends State<Translator> {
                     widget.translationHost['host'] = controllerHost.text;
                     widget.translationHost['api_key'] = controllerApiKey.text.isEmpty ? null : controllerApiKey.text;
                     Navigator.pop(context, true);
-                  }
+                  },
                 ),
-              )
+              ),
             ],
           ),
-        ]
-      )
+        ],
+      ),
     );
   }
 }

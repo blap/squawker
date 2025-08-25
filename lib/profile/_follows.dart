@@ -11,7 +11,7 @@ class ProfileFollows extends StatefulWidget {
   final UserWithExtra user;
   final String type;
 
-  const ProfileFollows({Key? key, required this.user, required this.type}) : super(key: key);
+  const ProfileFollows({super.key, required this.user, required this.type});
 
   @override
   State<ProfileFollows> createState() => _ProfileFollowsState();
@@ -19,7 +19,7 @@ class ProfileFollows extends StatefulWidget {
 
 class _ProfileFollowsState extends State<ProfileFollows> with AutomaticKeepAliveClientMixin<ProfileFollows> {
   late final Twitter _twitter;
-  late PagingController<int?, UserWithExtra> _pagingController;
+  late final PagingController<int?, UserWithExtra> _pagingController;
 
   final int _pageSize = 200;
 
@@ -31,10 +31,10 @@ class _ProfileFollowsState extends State<ProfileFollows> with AutomaticKeepAlive
     super.initState();
 
     _twitter = Twitter();
-    _pagingController = PagingController(firstPageKey: null);
-    _pagingController.addPageRequestListener((cursor) {
-      _loadFollows(cursor);
-    });
+    _pagingController = PagingController<int?, UserWithExtra>(
+      getNextPageKey: (state) => state.lastPageIsEmpty || state.keys?.isEmpty != false ? null : state.keys!.last,
+      fetchPage: (cursor) => _loadFollowsPage(cursor),
+    );
   }
 
   @override
@@ -43,7 +43,7 @@ class _ProfileFollowsState extends State<ProfileFollows> with AutomaticKeepAlive
     super.dispose();
   }
 
-  Future _loadFollows(int? cursor) async {
+  Future<List<UserWithExtra>> _loadFollowsPage(int? cursor) async {
     try {
       var result = await _twitter.getProfileFollows(
         widget.user.screenName!,
@@ -53,20 +53,17 @@ class _ProfileFollowsState extends State<ProfileFollows> with AutomaticKeepAlive
       );
 
       if (!mounted) {
-        return;
+        return [];
       }
 
-      if (result.cursorBottom == _pagingController.nextPageKey) {
-        _pagingController.appendLastPage([]);
-      } else if (result.cursorBottom == 0) {
-        _pagingController.appendLastPage(result.users);
-      } else {
-        _pagingController.appendPage(result.users, result.cursorBottom);
-      }
-    } catch (e, stackTrace) {
+      // Return the users directly, the pagination logic is handled by the controller
+      return result.users;
+    } catch (e) {
       if (mounted) {
-        _pagingController.error = [e, stackTrace];
+        // Re-throw the error so the controller can handle it
+        rethrow;
       }
+      return [];
     }
   }
 
@@ -75,37 +72,38 @@ class _ProfileFollowsState extends State<ProfileFollows> with AutomaticKeepAlive
     super.build(context);
 
     return Scaffold(
-        appBar: AppBar(
-          title: Text(widget.type == 'following' ? L10n.of(context).following : L10n.of(context).followers),
-        ),
-        body: PagedListView<int?, UserWithExtra>(
+      appBar: AppBar(title: Text(widget.type == 'following' ? L10n.of(context).following : L10n.of(context).followers)),
+      body: PagingListener(
+        controller: _pagingController,
+        builder: (context, state, fetchNextPage) => PagedListView<int?, UserWithExtra>(
+          state: state,
+          fetchNextPage: fetchNextPage,
           padding: EdgeInsets.zero,
-          pagingController: _pagingController,
           addAutomaticKeepAlives: false,
           builderDelegate: PagedChildBuilderDelegate(
             itemBuilder: (context, user, index) => UserTile(user: UserSubscription.fromUser(user)),
             firstPageErrorIndicatorBuilder: (context) => FullPageErrorWidget(
-              error: _pagingController.error[0],
-              stackTrace: _pagingController.error[1],
+              error: state.error ?? Exception('Unknown error'),
+              stackTrace: null,
               prefix: L10n.of(context).unable_to_load_the_list_of_follows,
-              onRetry: () => _loadFollows(_pagingController.firstPageKey),
+              onRetry: () => _pagingController.refresh(),
             ),
             newPageErrorIndicatorBuilder: (context) => FullPageErrorWidget(
-              error: _pagingController.error[0],
-              stackTrace: _pagingController.error[1],
+              error: state.error ?? Exception('Unknown error'),
+              stackTrace: null,
               prefix: L10n.of(context).unable_to_load_the_next_page_of_follows,
-              onRetry: () => _loadFollows(_pagingController.nextPageKey),
+              onRetry: () => _pagingController.fetchNextPage(),
             ),
             noItemsFoundIndicatorBuilder: (context) {
               var text = widget.type == 'following'
                   ? L10n.of(context).this_user_does_not_follow_anyone
                   : L10n.of(context).this_user_does_not_have_anyone_following_them;
 
-              return Center(
-                child: Text(text),
-              );
+              return Center(child: Text(text));
             },
           ),
-        ));
+        ),
+      ),
+    );
   }
 }

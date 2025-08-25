@@ -12,15 +12,13 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
 class TrendsList extends StatefulWidget {
-
-  const TrendsList({Key? key}) : super(key: key);
+  const TrendsList({super.key});
 
   @override
   State<TrendsList> createState() => _TrendsListState();
 }
 
 class _TrendsListState extends State<TrendsList> {
-
   final ScrollController scrollController = ScrollController();
 
   @override
@@ -44,8 +42,22 @@ class _TrendsListState extends State<TrendsList> {
       onLoading: (context) => const Center(child: CircularProgressIndicator()),
       onState: (context, state) {
         if (state.isEmpty) {
-          // TODO: Empty state
-          return Container();
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.trending_down, size: 48, color: Theme.of(context).disabledColor),
+                const SizedBox(height: 16),
+                Text(L10n.of(context).no_results, style: Theme.of(context).textTheme.bodyMedium),
+                const SizedBox(height: 8),
+                Text(
+                  L10n.of(context).trending,
+                  style: Theme.of(context).textTheme.bodySmall,
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+          );
         }
 
         var trends = state[0].trends;
@@ -66,18 +78,17 @@ class _TrendsListState extends State<TrendsList> {
             var trend = trends[index];
 
             return ListTile(
-                dense: true,
-                leading: Text('${++index}'),
-                title: Text(trend.name!),
-                subtitle: trend.tweetVolume == null
-                    ? null
-                    : Text(
-                        L10n.of(context).tweets_number(
-                          trend.tweetVolume!,
-                          numberFormat.format(trend.tweetVolume),
-                        ),
-                      ),
-                onTap: () => pushNamedRoute(context, routeSearch, SearchArguments(1, focusInputOnOpen: false, query: Uri.decodeQueryComponent(trend.query!)))
+              dense: true,
+              leading: Text('${++index}'),
+              title: Text(trend.name!),
+              subtitle: trend.tweetVolume == null
+                  ? null
+                  : Text(L10n.of(context).tweets_number(trend.tweetVolume!, numberFormat.format(trend.tweetVolume))),
+              onTap: () => pushNamedRoute(
+                context,
+                routeSearch,
+                SearchArguments(1, focusInputOnOpen: false, query: Uri.decodeQueryComponent(trend.query!)),
+              ),
             );
           },
         );
