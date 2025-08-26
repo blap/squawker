@@ -117,5 +117,14 @@ These warnings are normal and don't affect the functionality of the built APK:
 
 The project now includes specific ProGuard rules in `android/app/proguard-rules.pro` to handle these warnings properly, ensuring they don't cause build failures while maintaining the security and optimization benefits of code shrinking and obfuscation.
 
+#### Dependency Management
+
+##### Flutter Triple 3.0.0 Migration
+The project currently uses flutter_triple version 2.2.0. An attempt was made to upgrade to version 3.0.0, but this introduced compatibility issues due to breaking changes in the package's architecture.
+
+Version 3.0.0 migrated from RxNotifier to ASP (Atomic State Pattern), which requires significant code changes throughout the codebase. For details about the issues encountered and the recommended migration path, see [FLUTTER_TRIPLE_MIGRATION.md](FLUTTER_TRIPLE_MIGRATION.md).
+
+The decision was made to maintain stability by keeping version 2.2.0 until a comprehensive migration plan can be implemented.
+
 ### Acknowledgments
 Duck Icon: <a href="https://www.vecteezy.com/free-vector/bathroom">Bathroom Vectors by Vecteezy</a>
