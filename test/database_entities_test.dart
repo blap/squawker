@@ -94,7 +94,7 @@ void main() {
 
         // Assert
         expect(subscription.id, 'flutter');
-        expect(subscription.createdAt, DateTime.parse(dateString));
+        expect(subscription.createdAt, DateTime.parse(dateString).toUtc());
       });
 
       test('should convert to map correctly', () {

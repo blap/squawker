@@ -1,41 +1,51 @@
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:squawker/database/repository.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 void main() {
-  setUpAll(() {
-    // Initialize sqflite for testing
-    TestWidgetsFlutterBinding.ensureInitialized();
-    sqfliteFfiInit();
-    databaseFactory = databaseFactoryFfi;
-  });
-  group('Database Repository', () {
-    test('should have Repository class available', () {
-      expect(Repository, isNotNull);
+  sqfliteFfiInit();
+
+  group('Repository', () {
+    late Database database;
+
+    setUpAll(() {
+      databaseFactory = databaseFactoryFfi;
     });
 
-    test('should have readOnly and writable methods available', () {
-      // Test that the methods exist without calling them
-      expect(Repository.readOnly, isA<Function>());
-      expect(Repository.writable, isA<Function>());
+    setUp(() async {
+      database = await databaseFactoryFfi.openDatabase(inMemoryDatabasePath);
     });
 
-    test('should be able to reference methods without execution', () {
-      // Test method signatures without actually calling them
-      const Function readOnlyMethod = Repository.readOnly;
-      const Function writableMethod = Repository.writable;
-
-      expect(readOnlyMethod, isNotNull);
-      expect(writableMethod, isNotNull);
+    tearDown(() {
+      database.close();
     });
 
-    // Note: More specific tests would require mocking the database
-    // or setting up a test database, which would include:
-    // - Database initialization
-    // - Table creation and migration
-    // - CRUD operations
-    // - Transaction handling
-    // - Connection pooling
-    // - Error handling for database operations
+    test('should migrate the database', () async {
+      // Arrange
+      final repository = Repository();
+
+      // Act
+      final result = await repository.migrate();
+
+      // Assert
+      expect(result, true);
+
+      // Check if the tables were created
+      final tables = await database.rawQuery('SELECT name FROM sqlite_master WHERE type="table"');
+      final tableNames = tables.map((e) => e['name']).toList();
+
+      expect(tableNames, contains(tableFeedGroupChunk));
+      expect(tableNames, contains(tableFeedGroupPositionState));
+      expect(tableNames, contains(tableSavedTweet));
+      expect(tableNames, contains(tableSearchSubscription));
+      expect(tableNames, contains(tableSearchSubscriptionGroupMember));
+      expect(tableNames, contains(tableSubscription));
+      expect(tableNames, contains(tableSubscriptionGroup));
+      expect(tableNames, contains(tableSubscriptionGroupMember));
+      expect(tableNames, contains(tableRateLimits));
+      expect(tableNames, contains(tableTwitterToken));
+      expect(tableNames, contains(tableTwitterProfile));
+    });
   });
 }
