@@ -347,10 +347,10 @@ class _HomeScreenState extends State<_HomeScreen> {
     http.Request req = http.Request('Get', link)..followRedirects = false;
     http.StreamedResponse response = await AppHttpClient.httpSend(req);
     String? location = response.headers['location'];
-    if (location == null) {
-      throw Exception('No location header found in response');
+    if (location != null) {
+      return Uri.parse(location);
     }
-    return Uri.parse(location);
+    return link; // Return the original link if no location header
   }
 }
 

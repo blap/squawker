@@ -9,5 +9,7 @@
         ],
         "editor.formatOnSave": true,
     },
-    "java.configuration.updateBuildConfiguration": "automatic"
+    "java.configuration.updateBuildConfiguration": "automatic",
+    "chat.editing.autoAcceptDelay": 10,
+    "chat.agent.maxRequests": 10000000000000000
 }

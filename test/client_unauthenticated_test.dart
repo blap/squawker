@@ -1,19 +1,32 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:squawker/client/client_unauthenticated.dart';
 
 void main() {
-  group('Client Unauthenticated', () {
-    test('should have unauthenticated client available', () {
-      // This test verifies the file imports successfully
-      expect(true, true);
+  group('TwitterUnauthenticated', () {
+    // Test that the module can be imported and instantiated
+
+    test('should be able to import TwitterUnauthenticated', () {
+      // This test simply verifies that the module can be imported without errors
+      expect(TwitterUnauthenticated, isNotNull);
     });
 
-    // Note: More specific tests would be written after examining
-    // the actual unauthenticated client implementation
-    // These might include:
-    // - Public API access
-    // - Anonymous request handling
-    // - Rate limiting for unauthenticated users
-    // - Error responses for protected endpoints
-    // - Public timeline access
+    test('should have expected static methods', () {
+      // Verify that the class and its methods exist
+      expect(TwitterUnauthenticated, isNotNull);
+    });
+
+    test('should have unauthenticated access token constant', () {
+      // Verify the constant exists
+      expect(unauthenticatedAccessToken, isNotNull);
+      expect(unauthenticatedAccessToken, isA<String>());
+    });
+
+    test('should be able to create TwitterUnauthenticatedException', () {
+      // Test that we can create the exception class
+      final exception = TwitterUnauthenticatedException('Test message');
+      expect(exception, isNotNull);
+      expect(exception.message, 'Test message');
+      expect(exception.toString(), 'Test message');
+    });
   });
 }

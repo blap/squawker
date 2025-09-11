@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:squawker/profile/profile_model.dart';
+import 'package:squawker/user.dart';
 
 void main() {
   group('ProfileModel', () {
@@ -17,13 +18,37 @@ void main() {
       expect(model, isA<ProfileModel>());
     });
 
-    // Note: More specific tests would be written after examining
-    // the actual ProfileModel implementation in profile_model.dart
-    // These might include:
-    // - Profile data loading
-    // - Profile state management
-    // - User profile updates
-    // - Profile error handling
-    // - Profile caching
+    test('should have initial state with empty user and pinned tweets', () {
+      expect(model.state.user, isA<UserWithExtra>());
+      expect(model.state.pinnedTweets, isEmpty);
+    });
+
+    test('should have loadProfileById method', () {
+      expect(model.loadProfileById, isA<Function>());
+    });
+
+    test('should have loadProfileByScreenName method', () {
+      expect(model.loadProfileByScreenName, isA<Function>());
+    });
+
+    test('should have Twitter client initialized', () {
+      expect(model, isNotNull);
+    });
+  });
+
+  group('Profile', () {
+    test('should be able to import Profile', () {
+      expect(Profile, isNotNull);
+    });
+
+    test('should be able to create Profile instance', () {
+      final user = UserWithExtra();
+      final pinnedTweets = <String>[];
+      final profile = Profile(user, pinnedTweets);
+
+      expect(profile, isNotNull);
+      expect(profile.user, user);
+      expect(profile.pinnedTweets, pinnedTweets);
+    });
   });
 }

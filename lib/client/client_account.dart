@@ -164,8 +164,8 @@ class TwitterAccount {
       if (merl != null) {
         _rateLimits[merl.key] = _rateLimits[''] as List<Map<String, int>>;
         _rateLimits.remove('');
+        await repository.delete(tableRateLimits, where: 'oauth_token IS NULL');
       }
-      await repository.delete(tableRateLimits, where: 'oauth_token IS NULL');
     }
 
     if (_twitterTokenLst.isNotEmpty) {
@@ -323,20 +323,17 @@ class TwitterAccount {
   static Future<DateTime?> _getLastGuestTwitterTokenCreationAttempted() async {
     final prefs = await SharedPreferences.getInstance();
     List<String>? lastGuestAccountsCreationAttemptedLst = prefs.getStringList('lastGuestAccountsCreationsAttempted');
-    if (lastGuestAccountsCreationAttemptedLst == null) {
-      return null;
-    }
     String? publicIP = await getPublicIP();
-    String? ipLastGuestAccountsCreationAttemptedStr = lastGuestAccountsCreationAttemptedLst.firstWhereOrNull(
+    String? ipLastGuestAccountsCreationAttemptedStr = lastGuestAccountsCreationAttemptedLst?.firstWhereOrNull(
       (e) => e.startsWith('$publicIP='),
     );
-    if (ipLastGuestAccountsCreationAttemptedStr == null) {
-      return null;
+    if (ipLastGuestAccountsCreationAttemptedStr != null) {
+      String lastGuestAccountsCreationAttemptedStr = ipLastGuestAccountsCreationAttemptedStr.substring(
+        '$publicIP='.length,
+      );
+      return DateTime.parse(lastGuestAccountsCreationAttemptedStr);
     }
-    String lastGuestAccountsCreationAttemptedStr = ipLastGuestAccountsCreationAttemptedStr.substring(
-      '$publicIP='.length,
-    );
-    return DateTime.parse(lastGuestAccountsCreationAttemptedStr);
+    return null;
   }
 
   static Future<void> _setLastGuestTwitterTokenCreationAttempted() async {

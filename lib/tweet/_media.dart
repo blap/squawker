@@ -270,10 +270,13 @@ class _TweetMediaViewState extends State<TweetMediaView> {
                 await shareJpegData(fileBytes);
               } else {
                 if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to download media')));
+                  ScaffoldMessenger.of(context).clearSnackBars();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text(L10n.of(context).unable_to_load_the_tweets)),
+                  );
                 }
               }
-            },
+                        },
             child: const Icon(Icons.share),
           ),
         ],
@@ -400,10 +403,13 @@ class _TweetPhotoViewState extends State<TweetPhotoView> {
                 await shareJpegData(fileBytes);
               } else {
                 if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to download media')));
+                  ScaffoldMessenger.of(context).clearSnackBars();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text(L10n.of(context).unable_to_load_the_tweets)),
+                  );
                 }
               }
-            },
+                        },
             child: const Icon(Icons.share),
           ),
         ],

@@ -53,7 +53,7 @@ dependencies:
   chewie: ^1.7.5
   cryptography: ^2.7.0
   dart_twitter_api: ^0.6.0
-  device_info_plus: ^11.5.0
+  device_info_plus: ^12.0.0
   # device_preview: ^1.1.0 # incompatible with Flutter 3.22.x+
   dotted_border: ^3.1.0
   extended_image: ^10.0.1
@@ -88,7 +88,7 @@ dependencies:
   measure_size: ^4.0.0
   media_scanner: ^2.1.0
   multi_select_flutter: ^4.1.3
-  package_info_plus: ^8.3.1
+  package_info_plus: ^9.0.0
   path: ^1.8.3
   path_provider: ^2.1.1
   permission_handler: ^12.0.1
@@ -98,7 +98,7 @@ dependencies:
   receive_sharing_intent: 1.8.1
   scroll_to_index: ^3.0.1
   scrollable_positioned_list: ^0.3.8
-  share_plus: ^11.1.0
+  share_plus: ^12.0.0
   shared_preferences: ^2.2.2
   socks5_proxy: ^2.1.0
   sqflite: ^2.4.2

@@ -178,7 +178,6 @@ class Twitter {
     'super_follow_tweet_api_enabled': 'false',
     'super_follow_user_api_enabled': 'false',
     'tweet_awards_web_tipping_enabled': 'false',
-    'tweet_with_visibility_results_prefer_gql_limited_actions_policy_enabled': 'false',
     'tweetypie_unmention_optimization_enabled': 'false',
     'unified_cards_ad_metadata_container_dynamic_card_content_query_enabled': 'false',
     'verified_phone_label_enabled': 'false',
@@ -665,7 +664,10 @@ class Twitter {
   }
 
   Future<List<Trends>> getTrends(int location) async {
-    var result = await _cache.getOrCreateAsJSON('trends.\$location', const Duration(minutes: 2), () async {
+    // Ensure each location has a unique cache key and reduce cache time for more fresh data
+    var cacheKey = 'trends.$location';
+    var result = await _cache.getOrCreateAsJSON(cacheKey, const Duration(minutes: 1), () async {
+      Logger.root.info('Fetching trends for location WOEID: $location');
       var trends = await _twitterApiAllowUnauthenticated.trendsService.place(id: location);
       return jsonEncode(trends.map((e) => e.toJson()).toList());
     });

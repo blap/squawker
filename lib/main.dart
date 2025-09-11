@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math' as math;
 //import 'package:device_preview/device_preview.dart';
 import 'package:faker/faker.dart';
 import 'package:flex_color_scheme/flex_color_scheme.dart';
@@ -53,6 +54,17 @@ Future checkForUpdates() async {
   Logger.root.info('Checking for updates');
 
   PackageInfo packageInfo = await PackageInfo.fromPlatform();
+
+  // Detect build type
+  bool isLocalBuild = _isLocalBuild(packageInfo);
+  bool isPreRelease = _isPreRelease(packageInfo.version);
+
+  // For local builds, we might want different behavior
+  if (isLocalBuild) {
+    Logger.root.info('Running local build, applying custom update logic');
+    // Could check for pre-releases or development versions instead
+  }
+
   final client = HttpClient();
   client.userAgent = faker.internet.userAgent();
 
@@ -63,7 +75,8 @@ Future checkForUpdates() async {
     final contentAsString = await utf8.decodeStream(response);
     final Map<dynamic, dynamic> map = json.decode(contentAsString);
     if (map["tag_name"] != null) {
-      if (map["tag_name"] != 'v${packageInfo.version}') {
+      // Enhanced version comparison that understands build types
+      if (_shouldNotifyAboutUpdate(packageInfo.version, map["tag_name"], isLocalBuild, isPreRelease)) {
         await requestPostNotificationsPermissions(() async {
           await FlutterLocalNotificationsPlugin().show(
             0,
@@ -82,11 +95,91 @@ Future checkForUpdates() async {
             payload: map['html_url'],
           );
         });
-      } else if (map['html_url'].isEmpty) {
-        Logger.root.severe('Unable to check for updates');
       }
+    } else if (map['html_url'].isEmpty) {
+      Logger.root.severe('Unable to check for updates');
     }
   }
+}
+
+// Helper functions for Option 1
+bool _isLocalBuild(PackageInfo packageInfo) {
+  // Check if this is a local development build
+  // This could be determined by build number, version format, or other indicators
+  return packageInfo.buildNumber.contains('local') ||
+      packageInfo.version.contains('-dev') ||
+      int.tryParse(packageInfo.buildNumber) == null;
+}
+
+bool _isPreRelease(String version) {
+  // Check if version indicates a pre-release (alpha, beta, rc, etc.)
+  return version.toLowerCase().contains('alpha') ||
+      version.toLowerCase().contains('beta') ||
+      version.toLowerCase().contains('rc') ||
+      version.toLowerCase().contains('pre');
+}
+
+bool _shouldNotifyAboutUpdate(String localVersion, String remoteTag, bool isLocalBuild, bool isPreRelease) {
+  String remoteVersion = remoteTag.toString().replaceAll('v', '');
+
+  // If this is a local build with a higher version, don't notify
+  if (isLocalBuild && _isLocalVersionNewer(localVersion, remoteVersion)) {
+    return false;
+  }
+
+  // If versions are the same, no update needed
+  if (localVersion == remoteVersion) {
+    return false;
+  }
+
+  // For pre-releases, we might want different logic
+  if (isPreRelease) {
+    // Could check for newer pre-releases or stable releases
+    return _isStableReleaseNewer(localVersion, remoteVersion);
+  }
+
+  // Standard version comparison
+  return _isRemoteVersionNewer(localVersion, remoteVersion);
+}
+
+/// Compares two version strings to determine if the remote version is newer
+bool _isRemoteVersionNewer(String localVersion, String remoteVersion) {
+  // If versions are exactly the same, no update is needed
+  if (localVersion == remoteVersion) {
+    return false;
+  }
+
+  // Split versions into components (e.g., "3.8.4" -> ["3", "8", "4"])
+  List<String> localComponents = localVersion.split('.');
+  List<String> remoteComponents = remoteVersion.split('.');
+
+  // Compare each component numerically
+  for (int i = 0; i < math.max(localComponents.length, remoteComponents.length); i++) {
+    int localNum = i < localComponents.length ? int.tryParse(localComponents[i]) ?? 0 : 0;
+    int remoteNum = i < remoteComponents.length ? int.tryParse(remoteComponents[i]) ?? 0 : 0;
+
+    if (remoteNum > localNum) {
+      return true; // Remote version is newer
+    } else if (remoteNum < localNum) {
+      return false; // Local version is newer
+    }
+    // If equal, continue to next component
+  }
+
+  // If we get here, versions are equal
+  return false;
+}
+
+/// Checks if the local version is newer than the remote version
+bool _isLocalVersionNewer(String localVersion, String remoteVersion) {
+  return !_isRemoteVersionNewer(localVersion, remoteVersion) && localVersion != remoteVersion;
+}
+
+/// Checks if a stable release is newer than the current version
+bool _isStableReleaseNewer(String localVersion, String remoteVersion) {
+  // For pre-releases, we generally want to notify about stable releases
+  // unless the local version is already a newer stable release
+  return !_isPreRelease(remoteVersion) && _isRemoteVersionNewer(localVersion, remoteVersion);
 }
 
 class UnableToCheckForUpdatesException {

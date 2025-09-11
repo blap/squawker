@@ -1,4 +1,3 @@
-
 import 'package:flutter_test/flutter_test.dart';
 import 'package:squawker/database/repository.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
@@ -7,18 +6,8 @@ void main() {
   sqfliteFfiInit();
 
   group('Repository', () {
-    late Database database;
-
     setUpAll(() {
       databaseFactory = databaseFactoryFfi;
-    });
-
-    setUp(() async {
-      database = await databaseFactoryFfi.openDatabase(inMemoryDatabasePath);
-    });
-
-    tearDown(() {
-      database.close();
     });
 
     test('should migrate the database', () async {
@@ -30,6 +19,9 @@ void main() {
 
       // Assert
       expect(result, true);
+
+      // Open the actual database to check if the tables were created
+      final database = await Repository.writable();
 
       // Check if the tables were created
       final tables = await database.rawQuery('SELECT name FROM sqlite_master WHERE type="table"');
@@ -46,6 +38,8 @@ void main() {
       expect(tableNames, contains(tableRateLimits));
       expect(tableNames, contains(tableTwitterToken));
       expect(tableNames, contains(tableTwitterProfile));
+
+      await database.close();
     });
   });
 }
