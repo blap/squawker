@@ -1,5 +1,19 @@
 # Flutter Triple 3.0.0 Migration Guide
 
+## ⚠️ WARNING ⚠️
+
+**DO NOT ATTEMPT TO UPDATE flutter_triple TO VERSION 3.0.0 WITHOUT EXTENSIVE REFACTORING**
+
+Updating to flutter_triple 3.0.0 will require significant changes to the codebase due to architectural changes from RxNotifier to ASP (Atomic State Pattern). 
+
+Attempting to upgrade without proper refactoring will result in compilation errors including:
+- `RxValueListenable` type not found
+- `Atom` constructor not found
+
+See the full migration details below if you plan to proceed with the upgrade.
+
+---
+
 ## Overview
 
 This document outlines the issues encountered when attempting to migrate from flutter_triple 2.2.0 to 3.0.0 in the Squawker project, and the steps taken to address them.

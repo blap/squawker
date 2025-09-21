@@ -9,6 +9,8 @@ import 'package:url_launcher/url_launcher_string.dart';
   customMocks: [MockSpec<Future<void> Function(String, {LaunchMode mode})>(onMissingStub: OnMissingStub.returnDefault)],
 )
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
   group('Urls Utility', () {
     test('should export openUri function', () {
       // This test simply verifies that the function can be imported
@@ -27,9 +29,10 @@ void main() {
         expect(openUri, isA<Function>());
       });
 
-      test('should call launchUrlString with external application mode', () async {
-        // This test would require proper mocking of url_launcher
-        // For now, we're just verifying the function can be called without error
+      test('should not throw when called', () async {
+        // Since we can't properly mock the url_launcher in this environment,
+        // we'll just verify that the function doesn't throw an exception
+        // when called with a valid URI
         expect(() => openUri('https://example.com'), returnsNormally);
       });
     });

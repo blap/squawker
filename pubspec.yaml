@@ -73,6 +73,9 @@ dependencies:
   flutter_local_notifications: ^19.4.1
   flutter_localized_locales: ^2.0.5
   flutter_swipe_action_cell: ^3.1.3
+  # WARNING: DO NOT UPDATE flutter_triple TO VERSION 3.0.0
+  # Updating to 3.0.0 will require extensive refactoring due to architectural changes
+  # from RxNotifier to ASP (Atomic State Pattern). See FLUTTER_TRIPLE_MIGRATION.md for details.
   flutter_triple: ^2.2.0
   hex: ^0.2.0
   html_unescape: ^2.0.0
