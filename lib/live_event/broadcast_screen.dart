@@ -3,6 +3,7 @@ import 'package:squawker/client/client.dart';
 import 'package:squawker/constants.dart';
 import 'package:squawker/generated/l10n.dart';
 import 'package:squawker/live_event/live_event.dart';
+import 'package:squawker/tweet/_photo.dart';
 import 'package:squawker/tweet/_video.dart';
 import 'package:squawker/utils/route_util.dart';
 import 'package:squawker/utils/urls.dart';
@@ -138,6 +139,11 @@ class _BroadcastScreenState extends State<_BroadcastScreen> {
       return Container();
     }
 
-    return Container(); // Placeholder since we don't have access to TweetPhoto here
+    return TweetPhoto(
+      uri: imageUrl,
+      fit: BoxFit.cover,
+      pullToClose: false,
+      inPageView: false,
+    );
   }
 }
