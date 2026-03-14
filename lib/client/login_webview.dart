@@ -65,12 +65,12 @@ class _TwitterLoginWebviewState extends State<TwitterLoginWebview> {
           if (!_csrfTokenFound || _userFound) {
             return;
           }
-          String screen_name = (await webviewController.runJavaScriptReturningResult("document.documentElement.outerHTML.match(/\"screen_name\":\"([^\"]+)\"/)?.[1] ?? '';")).toString();
-          if (screen_name == '') {
+          String screenName = (await webviewController.runJavaScriptReturningResult("document.documentElement.outerHTML.match(/\"screen_name\":\"([^\"]+)\"/)?.[1] ?? '';")).toString();
+          if (screenName == '') {
             Navigator.pop(context);
             return;
           }
-          screen_name = screen_name.replaceAll('"', '');
+          screenName = screenName.replaceAll('"', '');
           //print('*** login onPageFinished:');
           //print(url);
           //print(screen_name);
@@ -78,10 +78,10 @@ class _TwitterLoginWebviewState extends State<TwitterLoginWebview> {
           _userFound = true;
 
           final database = await Repository.writable();
-          await database.insert(tableAccounts, Account(id: _csrfToken!, screenName: screen_name, authHeader: json.encode(_authHeader!)).toMap());
+          await database.insert(tableAccounts, Account(id: _csrfToken!, screenName: screenName, authHeader: json.encode(_authHeader!)).toMap());
           await database.close();
 
-          print('X user $screen_name added in database.');
+          print('X user $screenName added in database.');
 
           await TwitterAccount.initCheckXAccounts(forceInit: true);
           Provider.of<AccountAddedNotifier>(context, listen: false).publish();

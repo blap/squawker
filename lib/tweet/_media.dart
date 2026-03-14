@@ -26,8 +26,7 @@ class _TweetMediaItem extends StatefulWidget {
   final String username;
 
   const _TweetMediaItem(
-      {Key? key, required this.index, required this.total, required this.media, required this.username})
-      : super(key: key);
+      {required this.index, required this.total, required this.media, required this.username});
 
   @override
   State<_TweetMediaItem> createState() => _TweetMediaItemState();
@@ -129,7 +128,7 @@ class TweetMedia extends StatefulWidget {
   final List<Media> media;
   final String username;
 
-  const TweetMedia({Key? key, required this.sensitive, required this.media, required this.username}) : super(key: key);
+  const TweetMedia({super.key, required this.sensitive, required this.media, required this.username});
 
   @override
   State<TweetMedia> createState() => _TweetMediaState();
@@ -191,8 +190,7 @@ class TweetMediaView extends StatefulWidget {
   final List<Media> media;
   final String username;
 
-  const TweetMediaView({Key? key, required this.initialIndex, required this.media, required this.username})
-      : super(key: key);
+  const TweetMediaView({super.key, required this.initialIndex, required this.media, required this.username});
 
   @override
   State<TweetMediaView> createState() => _TweetMediaViewState();
@@ -296,13 +294,11 @@ class _TweetMediaThing extends StatelessWidget {
   final bool inPageView;
 
   const _TweetMediaThing(
-      {Key? key,
-      required this.item,
+      {required this.item,
       required this.username,
       required this.size,
       required this.pullToClose,
-      required this.inPageView})
-      : super(key: key);
+      required this.inPageView});
 
   @override
   Widget build(BuildContext context) {
@@ -326,7 +322,7 @@ class TweetPhotoView extends StatefulWidget {
   final String url;
   final String username;
 
-  const TweetPhotoView({Key? key, required this.url, required this.username}) : super(key: key);
+  const TweetPhotoView({super.key, required this.url, required this.username});
 
   @override
   State<TweetPhotoView> createState() => _TweetPhotoViewState();

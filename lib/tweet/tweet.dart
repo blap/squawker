@@ -47,7 +47,7 @@ class TweetTile extends StatefulWidget {
   final VisiblePositionState? visiblePositionState;
 
   const TweetTile(
-      {Key? key,
+      {super.key,
       this.conversationId,
       required this.clickable,
       this.currentUsername,
@@ -56,8 +56,7 @@ class TweetTile extends StatefulWidget {
       this.isThread = false,
       this.isBirdwatchQuote = false,
       this.tweetIdx,
-      this.visiblePositionState})
-      : super(key: key);
+      this.visiblePositionState});
 
   @override
   TweetTileState createState() => TweetTileState();
@@ -324,7 +323,7 @@ class TweetTileState extends State<TweetTile> with SingleTickerProviderStateMixi
     return _twitterUrls.firstWhereOrNull((elm) => url.startsWith('https://$elm/')) != null;
   }
 
-  _createFooterIconButton(IconData icon, [Color? color, double? fill, Function()? onPressed]) {
+  IconButton _createFooterIconButton(IconData icon, [Color? color, double? fill, Function()? onPressed]) {
     return IconButton(
       icon: Icon(
         icon,
@@ -336,7 +335,7 @@ class TweetTileState extends State<TweetTile> with SingleTickerProviderStateMixi
     );
   }
 
-  _createFooterTextButton(IconData icon, String label, [Color? color, Function()? onPressed]) {
+  TextButton _createFooterTextButton(IconData icon, String label, [Color? color, Function()? onPressed]) {
     return TextButton.icon(
       icon: Icon(icon, size: 18, color: color),
       onPressed: onPressed,
@@ -809,7 +808,7 @@ class _TweetTileLeading extends StatelessWidget {
   final IconData icon;
   final Iterable<InlineSpan> children;
 
-  const _TweetTileLeading({Key? key, this.onTap, required this.icon, required this.children}) : super(key: key);
+  const _TweetTileLeading({this.onTap, required this.icon, required this.children});
 
   @override
   Widget build(BuildContext context) {

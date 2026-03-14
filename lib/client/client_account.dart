@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'package:extended_image/extended_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_triple/flutter_triple.dart';
 import 'package:http/http.dart' as http;
@@ -598,60 +597,7 @@ class TwitterAccount {
     };
   }
 
-  static Future<String> _getSignOauth(Uri uri, String method) async {
-    if (_currentTwitterToken == null) {
-      throw TwitterAccountException('There is a problem getting a Twitter/X token.');
-    }
-    Map<String,String> params = Map<String,String>.from(uri.queryParameters);
-    params['oauth_version'] = '1.0';
-    params['oauth_signature_method'] = 'HMAC-SHA1';
-    params['oauth_consumer_key'] = oauthConsumerKey;
-    params['oauth_token'] = _currentTwitterToken!.oauthToken;
-    params['oauth_nonce'] =  nonce();
-    params['oauth_timestamp'] = (DateTime.now().millisecondsSinceEpoch / 1000).round().toString();
-    String methodUp = method.toUpperCase();
-    String link = Uri.encodeComponent('${uri.origin}${uri.path}');
-    String paramsToSign = params.keys.sorted((a, b) => a.compareTo(b)).map((e) => '$e=${Uri.encodeComponent(params[e]!)}').join('&').replaceAll('+', '%20').replaceAll('%', '%25').replaceAll('=', '%3D').replaceAll('&', '%26');
-    String toSign = '$methodUp&$link&$paramsToSign';
-    //print('paramsToSign=$paramsToSign');
-    //print('toSign=$toSign');
-    String signature = Uri.encodeComponent(await hmacSHA1('$oauthConsumerSecret&${_currentTwitterToken!.oauthTokenSecret}', toSign));
-    return 'OAuth realm="http://api.twitter.com/", oauth_version="1.0", oauth_token="${params["oauth_token"]}", oauth_nonce="${params["oauth_nonce"]}", oauth_timestamp="${params["oauth_timestamp"]}", oauth_signature="$signature", oauth_consumer_key="${params["oauth_consumer_key"]}", oauth_signature_method="HMAC-SHA1"';
-  }
 
-  static Future<http.Response> _doFetch(Uri uri, RateFetchContext fetchContext, {Map<String, String>? headers}) async {
-    try {
-      String authorization = await _getSignOauth(uri, 'GET');
-
-      var response = await AppHttpClient.httpGet(uri, headers: {
-        ...?headers,
-        'Connection': 'Keep-Alive',
-        'Authorization': authorization,
-        'Content-Type': 'application/json',
-        'X-Twitter-Active-User': 'yes',
-        'Authority': 'api.twitter.com',
-        'Accept-Encoding': 'gzip',
-        'Accept-Language': 'en-US,en;q=0.9',
-        'Accept': '*/*',
-        'DNT': '1',
-        'User-Agent': 'TwitterAndroid/10.10.0 (29950000-r-0) ONEPLUS+A3010/9 (OnePlus;ONEPLUS+A3010;OnePlus;OnePlus3;0;;1;2016)',
-        'X-Twitter-API-Version': '5',
-        'X-Twitter-Client': 'TwitterAndroid',
-        'X-Twitter-Client-Version': '10.10.0',
-        'OS-Version': '28',
-        'System-User-Agent': 'Dalvik/2.1.0 (Linux; U; Android 9; ONEPLUS A3010 Build/PKQ1.181203.001)',
-      });
-
-      await fetchContext.fetchWithResponse(response);
-
-      return response;
-    }
-    catch (err) {
-      log.severe('_doFetch - The request ${uri.path} has an error: ${err.toString()}');
-      await fetchContext.fetchNoResponse();
-      rethrow;
-    }
-  }
 
   static Future<http.Response> _doFetchX(Uri uri, RateFetchContext fetchContext, {Map<String, String>? headers}) async {
 
@@ -691,10 +637,7 @@ class TwitterAccount {
     }
 
 
-    if (fetchContext == null) {
-      fetchContext = RateFetchContext(uri.path, 1);
-      //await fetchContext.init();
-    }
+    fetchContext ??= RateFetchContext(uri.path, 1);
 
     http.Response rsp = await _doFetchX(uri, fetchContext, headers: headers);
 

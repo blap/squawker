@@ -18,7 +18,7 @@ import 'package:provider/provider.dart';
 import 'package:squawker/generated/l10n.dart';
 
 class SubscriptionImportScreen extends StatefulWidget {
-  const SubscriptionImportScreen({Key? key}) : super(key: key);
+  const SubscriptionImportScreen({super.key});
 
   @override
   State<SubscriptionImportScreen> createState() => _SubscriptionImportScreenState();
