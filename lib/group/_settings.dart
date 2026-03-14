@@ -9,8 +9,6 @@ void showFeedSettings(BuildContext context, GroupModel model) {
   showModalBottomSheet(
       context: context,
       builder: (context) {
-        var theme = Theme.of(context);
-
         return SizedBox(
           height: 250,
           child: Container(

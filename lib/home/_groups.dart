@@ -9,7 +9,7 @@ import 'package:provider/provider.dart';
 class GroupsScreen extends StatelessWidget {
   final ScrollController scrollController;
 
-  const GroupsScreen({Key? key, required this.scrollController}) : super(key: key);
+  const GroupsScreen({super.key, required this.scrollController});
 
   @override
   Widget build(BuildContext context) {

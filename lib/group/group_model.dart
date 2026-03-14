@@ -20,7 +20,7 @@ IconData deserializeIconData(String iconData) {
     if (icon != null) {
       return icon.data;
     }
-  } catch (e, stackTrace) {
+  } catch (e) {
     log('Unable to deserialize icon', error: e);
   }
 

@@ -56,7 +56,7 @@ class ProfileScreenArguments {
 }
 
 class ProfileScreen extends StatelessWidget {
-  const ProfileScreen({Key? key}) : super(key: key);
+  const ProfileScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -78,7 +78,7 @@ class _ProfileScreen extends StatelessWidget {
   final String? id;
   final String? screenName;
 
-  const _ProfileScreen({Key? key, required this.id, required this.screenName}) : super(key: key);
+  const _ProfileScreen({required this.id, required this.screenName});
 
   @override
   Widget build(BuildContext context) {
@@ -109,7 +109,7 @@ class ProfileScreenBody extends StatefulWidget {
   final BasePrefService prefs;
   final Profile profile;
 
-  const ProfileScreenBody({Key? key, required this.prefs, required this.profile}) : super(key: key);
+  const ProfileScreenBody({super.key, required this.prefs, required this.profile});
 
   @override
   State<StatefulWidget> createState() => _ProfileScreenBodyState();
@@ -582,7 +582,7 @@ class _ProfileScreenBodyState extends State<ProfileScreenBody> with TickerProvid
               : Container(
                   key: const Key('waiting'),
                   height: double.infinity,
-                  color: theme.colorScheme.background,
+                  color: theme.colorScheme.surface,
                 ),
         )
       ]),

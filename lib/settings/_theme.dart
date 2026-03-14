@@ -6,7 +6,7 @@ import 'package:squawker/utils/iterables.dart';
 import 'package:pref/pref.dart';
 
 class SettingsThemeFragment extends StatelessWidget {
-  const SettingsThemeFragment({Key? key}) : super(key: key);
+  const SettingsThemeFragment({super.key});
 
   int _getOptionTweetFontSizeValue(BuildContext context) {
     int optionTweetFontSizeValue =
@@ -77,7 +77,7 @@ class FontSizePickerDialog extends StatefulWidget {
   /// initial selection for the slider
   final int initialFontSize;
 
-  const FontSizePickerDialog({Key? key, required this.initialFontSize}) : super(key: key);
+  const FontSizePickerDialog({super.key, required this.initialFontSize});
 
   @override
   FontSizePickerDialogState createState() => FontSizePickerDialogState();

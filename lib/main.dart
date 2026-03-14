@@ -4,7 +4,6 @@ import 'dart:io';
 //import 'package:device_preview/device_preview.dart';
 import 'package:faker/faker.dart';
 import 'package:flex_color_scheme/flex_color_scheme.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -15,7 +14,6 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:pref/pref.dart';
 import 'package:provider/provider.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
-import 'package:squawker/client/accounts.dart';
 import 'package:squawker/client/app_http_client.dart';
 import 'package:squawker/client/client_account.dart';
 import 'package:squawker/client/login_webview.dart';
@@ -66,10 +64,10 @@ Future checkForUpdates() async {
       if (map["tag_name"].compareTo('v${packageInfo.version}') > 0) {
         await requestPostNotificationsPermissions(() async {
           await FlutterLocalNotificationsPlugin().show(
-              0,
-              'An update for Squawker is available! 🚀',
-              'View version ${map["tag_name"]} on Github',
-              const NotificationDetails(
+              id: 0,
+              title: 'An update for Squawker is available! 🚀',
+              body: 'View version ${map["tag_name"]} on Github',
+              notificationDetails: const NotificationDetails(
                   android: AndroidNotificationDetails(
                     'updates',
                     'Updates',
@@ -131,7 +129,7 @@ class UnableToCheckForUpdatesException {
   }
 }
 
-setTimeagoLocales() {
+void setTimeagoLocales() {
   timeago.setLocaleMessages('ar', timeago.ArMessages());
   timeago.setLocaleMessages('az', timeago.AzMessages());
   timeago.setLocaleMessages('ca', timeago.CaMessages());
@@ -237,7 +235,7 @@ Future<void> main() async {
   const InitializationSettings settings =
       InitializationSettings(android: AndroidInitializationSettings('@drawable/ic_notification'));
 
-  await notifications.initialize(settings, onDidReceiveNotificationResponse: (response) async {
+  await notifications.initialize(settings: settings, onDidReceiveNotificationResponse: (response) async {
     var payload = response.payload;
     if (payload != null && payload.startsWith('https://')) {
       await openUri(payload);
@@ -306,7 +304,7 @@ Future<void> main() async {
 }
 
 class SquawkerApp extends StatefulWidget {
-  const SquawkerApp({Key? key}) : super(key: key);
+  const SquawkerApp({super.key});
 
   @override
   State<SquawkerApp> createState() => _SquawkerAppState();
@@ -615,7 +613,7 @@ class _SquawkerAppState extends State<SquawkerApp> with WidgetsBindingObserver {
 }
 
 class DefaultPage extends StatefulWidget {
-  const DefaultPage({Key? key}) : super(key: key);
+  const DefaultPage({super.key});
 
   @override
   State<StatefulWidget> createState() => _DefaultPageState();

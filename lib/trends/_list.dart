@@ -13,7 +13,7 @@ import 'package:provider/provider.dart';
 
 class TrendsList extends StatefulWidget {
 
-  const TrendsList({Key? key}) : super(key: key);
+  const TrendsList({super.key});
 
   @override
   State<TrendsList> createState() => _TrendsListState();

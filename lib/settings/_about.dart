@@ -14,7 +14,7 @@ import 'package:pref/pref.dart';
 class SettingsAboutFragment extends StatelessWidget {
   final String appVersion;
 
-  const SettingsAboutFragment({Key? key, required this.appVersion}) : super(key: key);
+  const SettingsAboutFragment({super.key, required this.appVersion});
 
   Future<void> _appInfo(BuildContext context) async {
     var deviceInfo = DeviceInfoPlugin();

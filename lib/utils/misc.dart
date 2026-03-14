@@ -3,7 +3,6 @@ import 'dart:math';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
-import 'package:http/http.dart' as http;
 import 'package:squawker/client/app_http_client.dart';
 
 const androidChannel = MethodChannel('squawker/android_info');

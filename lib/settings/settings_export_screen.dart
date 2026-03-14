@@ -16,7 +16,7 @@ import 'package:pref/pref.dart';
 import 'package:provider/provider.dart';
 
 class SettingsExportScreen extends StatefulWidget {
-  const SettingsExportScreen({Key? key}) : super(key: key);
+  const SettingsExportScreen({super.key});
 
   @override
   State<SettingsExportScreen> createState() => _SettingsExportScreenState();

@@ -7,7 +7,6 @@ import 'package:http/http.dart' as http;
 import 'package:logging/logging.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:squawker/client/app_http_client.dart';
-import 'package:squawker/client/client_account.dart';
 import 'package:squawker/constants.dart';
 import 'package:squawker/generated/l10n.dart';
 import 'package:squawker/home/_feed.dart';
@@ -63,7 +62,7 @@ final List<NavigationPage> defaultHomePages = [
 ];
 
 class HomeScreen extends StatelessWidget {
-  const HomeScreen({Key? key}) : super(key: key);
+  const HomeScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -78,7 +77,7 @@ class _HomeScreen extends StatefulWidget {
   final BasePrefService prefs;
   final HomeModel model;
 
-  const _HomeScreen({Key? key, required this.prefs, required this.model}) : super(key: key);
+  const _HomeScreen({required this.prefs, required this.model});
 
   @override
   State<_HomeScreen> createState() => _HomeScreenState();
@@ -270,8 +269,7 @@ class ScaffoldWithBottomNavigation extends StatefulWidget {
   final List<Widget> Function(ScrollController scrollController) builder;
   final GlobalKey<FeedScreenState>? feedKey;
 
-  const ScaffoldWithBottomNavigation({Key? key, required this.pages, required this.initialPage, required this.builder, required this.feedKey})
-      : super(key: key);
+  const ScaffoldWithBottomNavigation({super.key, required this.pages, required this.initialPage, required this.builder, required this.feedKey});
 
   @override
   State<ScaffoldWithBottomNavigation> createState() => ScaffoldWithBottomNavigationState();
@@ -377,7 +375,7 @@ class ScaffoldWithBottomNavigationState extends State<ScaffoldWithBottomNavigati
         height: PrefService.of(context).get(optionHomeShowTabLabels) ? 70 : 40,
         destinations: [
           ..._pages.map((e) => DefaultTextStyle.merge(
-            style: NavigationBarTheme.of(context).labelTextStyle?.resolve(e.id == _pages[_selectedIndex].id ? <MaterialState>{MaterialState.selected} : <MaterialState>{}),
+            style: NavigationBarTheme.of(context).labelTextStyle?.resolve(e.id == _pages[_selectedIndex].id ? <WidgetState>{WidgetState.selected} : <WidgetState>{}),
             overflow: TextOverflow.clip,
             maxLines: 1,
             child: NavigationDestination(selectedIcon: Icon(e.icon, size: 22, fill: 1), icon: Icon(e.icon, size: 22), label: e.titleBuilder(context))
