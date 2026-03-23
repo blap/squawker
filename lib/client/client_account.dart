@@ -597,8 +597,6 @@ class TwitterAccount {
     };
   }
 
-
-
   static Future<http.Response> _doFetchX(Uri uri, RateFetchContext fetchContext, {Map<String, String>? headers}) async {
 
     try {
