@@ -35,7 +35,7 @@ class SettingLocale {
 class SettingsGeneralFragment extends StatelessWidget {
   static final log = Logger('SettingsGeneralFragment');
 
-  const SettingsGeneralFragment({Key? key}) : super(key: key);
+  const SettingsGeneralFragment({super.key});
 
   PrefDialog _createShareBaseDialog(BuildContext context) {
     BasePrefService prefs = PrefService.of(context);
@@ -82,7 +82,7 @@ class SettingsGeneralFragment extends StatelessWidget {
               AppHttpClient.setProxy(controller.text);
               await prefs.set(optionProxy, controller.text);
             }
-            catch (e, s) {
+            catch (e) {
               await showAlertDialog(context, L10n.of(context).proxy_error, e.toString());
             }
             Navigator.pop(context);
@@ -388,7 +388,7 @@ class SettingsGeneralFragment extends StatelessWidget {
 }
 
 class DownloadTypeSetting extends StatefulWidget {
-  const DownloadTypeSetting({Key? key}) : super(key: key);
+  const DownloadTypeSetting({super.key});
 
   @override
   DownloadTypeSettingState createState() => DownloadTypeSettingState();
@@ -604,7 +604,7 @@ class _DynamicTextfieldState extends State<DynamicTextfield> {
 class TranslatorsList extends StatefulWidget {
   final List<Map<String,dynamic>> initialValue;
 
-  TranslatorsList(this.initialValue, {super.key});
+  const TranslatorsList(this.initialValue, {super.key});
 
   @override
   State createState() => _TranslatorsListState();
@@ -756,7 +756,7 @@ class _TranslatorsListState extends State<TranslatorsList> {
 class Translator extends StatefulWidget {
   final Map<String,dynamic> translationHost;
 
-  Translator(this.translationHost, {super.key});
+  const Translator(this.translationHost, {super.key});
 
   @override
   State createState() => _TranslatorState();

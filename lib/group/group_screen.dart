@@ -28,7 +28,7 @@ class GroupScreenArguments {
 }
 
 class GroupScreen extends StatelessWidget {
-  const GroupScreen({Key? key}) : super(key: key);
+  const GroupScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -41,9 +41,9 @@ class GroupScreen extends StatelessWidget {
 
 class SubscriptionGroupScreenContent extends StatelessWidget {
   final String id;
-  ItemScrollController? scrollController = ItemScrollController();
+  final ItemScrollController? scrollController = ItemScrollController();
 
-  SubscriptionGroupScreenContent({Key? key, required this.id}) : super(key: key);
+  SubscriptionGroupScreenContent({super.key, required this.id});
 
   String _buildSearchQuery(List<Subscription> users, bool includeReplies, bool includeRetweets, List<String> exclusionsFeedLst) {
     StringBuffer query = StringBuffer();
@@ -148,8 +148,7 @@ class SubscriptionGroupScreen extends StatelessWidget {
   final List<Widget> actions;
 
   const SubscriptionGroupScreen(
-      {Key? key, required this.scrollController, required this.id, required this.name, required this.actions})
-      : super(key: key);
+      {super.key, required this.scrollController, required this.id, required this.name, required this.actions});
 
   @override
   Widget build(BuildContext context) {

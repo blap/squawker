@@ -5,7 +5,7 @@ import 'package:squawker/trends/_settings.dart';
 import 'package:squawker/trends/_tabs.dart';
 
 class TrendsScreen extends StatefulWidget {
-  const TrendsScreen({Key? key}) : super(key: key);
+  const TrendsScreen({super.key});
 
   @override
   State<TrendsScreen> createState() => _TrendsScreenState();

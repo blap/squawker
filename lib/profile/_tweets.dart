@@ -20,8 +20,7 @@ class ProfileTweets extends StatefulWidget {
   final List<String> pinnedTweets;
 
   const ProfileTweets(
-      {Key? key, required this.user, required this.type, required this.includeReplies, required this.pinnedTweets})
-      : super(key: key);
+      {super.key, required this.user, required this.type, required this.includeReplies, required this.pinnedTweets});
 
   @override
   State<ProfileTweets> createState() => _ProfileTweetsState();

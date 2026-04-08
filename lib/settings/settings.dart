@@ -16,7 +16,7 @@ import 'package:pref/pref.dart';
 class SettingsScreen extends StatefulWidget {
   final String? initialPage;
 
-  const SettingsScreen({Key? key, this.initialPage}) : super(key: key);
+  const SettingsScreen({super.key, this.initialPage});
 
   @override
   State<SettingsScreen> createState() => _SettingsScreenState();
@@ -24,7 +24,7 @@ class SettingsScreen extends StatefulWidget {
 
 class _SettingsScreenState extends State<SettingsScreen> {
   PackageInfo _packageInfo = PackageInfo(appName: '', packageName: '', version: '', buildNumber: '');
-  String _legacyExportPath = '';
+  final String _legacyExportPath = '';
 
   @override
   void initState() {

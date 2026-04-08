@@ -7,7 +7,7 @@ import 'package:squawker/trends/trends_model.dart';
 import 'package:provider/provider.dart';
 
 class TrendsTabBar extends StatefulWidget implements PreferredSizeWidget {
-  const TrendsTabBar({Key? key}) : super(key: key);
+  const TrendsTabBar({super.key});
 
   @override
   State<TrendsTabBar> createState() => _TrendsTabBarState();
@@ -96,7 +96,7 @@ class _LocationTab extends StatelessWidget {
   final TrendLocation location;
   final Function(TrendLocation) onDelete;
 
-  const _LocationTab(this.location, {Key? key, required this.onDelete}) : super(key: key);
+  const _LocationTab(this.location, {required this.onDelete});
 
   @override
   Widget build(BuildContext context) {

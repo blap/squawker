@@ -31,7 +31,7 @@ class SearchArguments {
 }
 
 class SearchScreen extends StatelessWidget {
-  const SearchScreen({Key? key}) : super(key: key);
+  const SearchScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -47,8 +47,7 @@ class _SearchScreen extends StatefulWidget {
   final String? query;
   final bool focusInputOnOpen;
 
-  const _SearchScreen({Key? key, required this.initialTab, this.query, this.focusInputOnOpen = false})
-      : super(key: key);
+  const _SearchScreen({required this.initialTab, this.query, this.focusInputOnOpen = false});
 
   @override
   State<_SearchScreen> createState() => _SearchScreenState();
@@ -223,12 +222,11 @@ class TweetSearchResultList<S extends Store<SearchStatus<T>>, T> extends Statefu
   final ItemWidgetBuilder<T> itemBuilder;
 
   const TweetSearchResultList(
-      {Key? key,
+      {super.key,
       required this.queryController,
       required this.store,
       required this.searchFunction,
-      required this.itemBuilder})
-      : super(key: key);
+      required this.itemBuilder});
 
   @override
   State<TweetSearchResultList<S, T>> createState() => TweetSearchResultListState<S, T>();
@@ -238,7 +236,6 @@ class TweetSearchResultListState<S extends Store<SearchStatus<T>>, T> extends St
   Timer? _debounce;
   String _previousQuery = '';
   String? _previousCursor;
-  late PagingController<String?, T> _pagingController;
   CursorPagingState<String?, T, String> _pagingState = CursorPagingState();
   late ScrollController _scrollController;
   double _lastOffset = 0;

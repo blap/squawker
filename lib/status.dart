@@ -26,7 +26,7 @@ class StatusScreenArguments {
 }
 
 class StatusScreen extends StatelessWidget {
-  const StatusScreen({Key? key}) : super(key: key);
+  const StatusScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -40,7 +40,7 @@ class _StatusScreen extends StatefulWidget {
   final String? username;
   final String id;
 
-  const _StatusScreen({Key? key, required this.username, required this.id}) : super(key: key);
+  const _StatusScreen({required this.username, required this.id});
 
   @override
   _StatusScreenState createState() => _StatusScreenState();

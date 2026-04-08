@@ -13,7 +13,7 @@ import 'package:provider/provider.dart';
 import 'package:squawker/generated/l10n.dart';
 
 class SubscriptionUsers extends StatefulWidget {
-  const SubscriptionUsers({Key? key}) : super(key: key);
+  const SubscriptionUsers({super.key});
 
   @override
   State<SubscriptionUsers> createState() => _SubscriptionUsersState();

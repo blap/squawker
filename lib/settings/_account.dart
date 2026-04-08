@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_swipe_action_cell/flutter_swipe_action_cell.dart';
-import 'package:logging/logging.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:pref/pref.dart';
 import 'package:squawker/client/client_account.dart';
@@ -14,16 +13,13 @@ import 'package:provider/provider.dart';
 
 class SettingsAccountFragment extends StatefulWidget {
 
-  const SettingsAccountFragment({Key? key}) : super(key: key);
+  const SettingsAccountFragment({super.key});
 
   @override
   State<StatefulWidget> createState() => _SettingsAccountFragmentState();
 }
 
 class _SettingsAccountFragmentState extends State<SettingsAccountFragment> {
-  static final log = Logger('_SettingsAccountFragmentState');
-
-  final RegExp _expId = RegExp(r'guest_id=(.+?);');
 
   //late List<TwitterTokenEntity> _regularAccountsTokens;
   late List<Account> _xAccountLst ;
@@ -176,9 +172,9 @@ class _SettingsAccountFragmentState extends State<SettingsAccountFragment> {
 class AddAccountDialog extends StatefulWidget {
   @override
   State<AddAccountDialog> createState() => _AddAccountDialogState();
-  String? accountToEdit;
+  final String? accountToEdit;
 
-  AddAccountDialog({Key? key, this.accountToEdit}): super(key: key);
+  const AddAccountDialog({super.key, this.accountToEdit});
 }
 
 class _AddAccountDialogState extends State<AddAccountDialog> {

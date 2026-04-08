@@ -5,7 +5,7 @@ import 'package:squawker/home/home_screen.dart';
 import 'package:squawker/ui/errors.dart';
 
 class MissingScreen extends StatelessWidget {
-  const MissingScreen({Key? key}) : super(key: key);
+  const MissingScreen({super.key});
 
   @override
   Widget build(BuildContext context) {

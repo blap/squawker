@@ -53,7 +53,7 @@ void showSnackBar(BuildContext context, {required String icon, required String m
 }
 
 abstract class FritterErrorWidget extends StatelessWidget {
-  const FritterErrorWidget({Key? key}) : super(key: key);
+  const FritterErrorWidget({super.key});
 }
 
 class UnknownTwitterErrorCode implements Exception {
@@ -112,20 +112,18 @@ class EmojiErrorWidget extends FritterErrorWidget {
   final String message;
   final String errorMessage;
   final Function? onRetry;
-  String retryText = '';
+  final String retryText;
   final bool showBackButton;
 
   EmojiErrorWidget(
-      {Key? key,
+      {super.key,
       required this.emoji,
       required this.message,
       required this.errorMessage,
       this.onRetry,
       String? retryText,
       this.showBackButton = true})
-      : super(key: key) {
-    this.retryText = retryText ?? L10n.current.retry;
-  }
+      : retryText = retryText ?? L10n.current.retry;
 
   @override
   Widget build(BuildContext context) {
@@ -195,7 +193,7 @@ class EmojiErrorWidget extends FritterErrorWidget {
 class InlineErrorWidget extends FritterErrorWidget {
   final Object? error;
 
-  const InlineErrorWidget({Key? key, required this.error}) : super(key: key);
+  const InlineErrorWidget({super.key, required this.error});
 
   @override
   Widget build(BuildContext context) {
@@ -220,8 +218,7 @@ class AlertErrorWidget extends FritterErrorWidget {
   final StackTrace? stackTrace;
   final String prefix;
 
-  const AlertErrorWidget({Key? key, required this.error, required this.stackTrace, required this.prefix})
-      : super(key: key);
+  const AlertErrorWidget({super.key, required this.error, required this.stackTrace, required this.prefix});
 
   @override
   Widget build(BuildContext context) {
@@ -239,8 +236,7 @@ class ScaffoldErrorWidget extends FritterErrorWidget {
   final String? retryText;
 
   const ScaffoldErrorWidget(
-      {Key? key, required this.error, required this.stackTrace, required this.prefix, this.onRetry, this.retryText})
-      : super(key: key);
+      {super.key, required this.error, required this.stackTrace, required this.prefix, this.onRetry, this.retryText});
 
   @override
   Widget build(BuildContext context) {
@@ -260,8 +256,7 @@ class FullPageErrorWidget extends FritterErrorWidget {
   final String? retryText;
 
   const FullPageErrorWidget(
-      {Key? key, required this.error, required this.stackTrace, required this.prefix, this.onRetry, this.retryText})
-      : super(key: key);
+      {super.key, required this.error, required this.stackTrace, required this.prefix, this.onRetry, this.retryText});
 
   @override
   Widget build(BuildContext context) {
